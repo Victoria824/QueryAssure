@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 async function render() {
@@ -34,4 +35,7 @@ test("renders the zero-key query experience and quality gates", async () => {
   assert.match(html, /sensitive_data_policy/);
   assert.match(html, /result_equivalence/);
   assert.match(html, /deterministic demo/);
+  const source = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  assert.match(source, /Victoria824\/DataAgentKit@v0\.2\.0/);
+  assert.match(source, /Reproducible benchmark/);
 });

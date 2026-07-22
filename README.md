@@ -1,16 +1,18 @@
 # DataAgentKit
 
-**Test data agents before they test production.**
+**Stop shipping SQL agents without tests.**
 
 [![CI](https://github.com/Victoria824/DataAgentKit/actions/workflows/ci.yml/badge.svg)](https://github.com/Victoria824/DataAgentKit/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
 [Try the zero-key playground](https://dataagentkit-playground.vicalayy.chatgpt.site) · [View the repository](https://github.com/Victoria824/DataAgentKit) · [Read the data strategy](docs/data-strategy.md)
 
+![DataAgentKit shows a grounded SQL Agent trace, query result, and release-blocking quality gates](public/og.png)
+
 DataAgentKit is an open-source SQL Agent playground plus a contract-testing and CI quality-gate toolkit for agentic analytics. Ask questions in a polished chat interface, inspect the retrieved metadata, generated SQL, validation decisions, and results—then test the same agent for correctness, security, latency, and regressions.
 
-> Status: early alpha. The deterministic demo, HTTP/Python adapters, data-quality checks,
-> and core validation pipeline work today.
+> **v0.2:** reference SQL Agent, HTTP/Python adapters, PostgreSQL and dbt metadata import,
+> correctness-first benchmarks, data-quality checks, and a reusable GitHub Action.
 
 ## Why this project exists
 
@@ -51,6 +53,20 @@ Question → metadata retrieval → SQL generation → policy validation
 
 ## Quickstart
 
+### One command
+
+```bash
+git clone https://github.com/Victoria824/DataAgentKit.git
+cd DataAgentKit
+docker compose up --build
+```
+
+Open `http://localhost:3000` for the chat experience and `http://localhost:8000/docs`
+for the reference Agent API. The web container talks to the API container, so the trace,
+SQL validation, and DuckDB execution are real rather than mocked.
+
+### Python development
+
 Requires Python 3.10+.
 
 ```bash
@@ -84,6 +100,29 @@ The [hosted playground](https://dataagentkit-playground.vicalayy.chatgpt.site) i
 run `dak serve`; the same questions, metadata retrieval, SQL gates, and result traces are
 available through `POST /api/chat`.
 
+## Put the quality gate in every pull request
+
+DataAgentKit is also a composite GitHub Action. It can evaluate the bundled reference
+agent or any HTTP endpoint that returns an `AgentTrace`-shaped response.
+
+```yaml
+name: SQL Agent quality gate
+on: [pull_request]
+
+jobs:
+  data-agent-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Victoria824/DataAgentKit@v0.2.0
+        with:
+          suite: evals/retail.yml
+```
+
+The action writes a human-readable job summary, fails unsafe regressions, and uploads the
+complete JSON report as a workflow artifact. Omit `agent-url` to run the included reference
+agent and fixture as a zero-configuration smoke test.
+
 ## A test case is a contract
 
 ```yaml
@@ -104,6 +143,46 @@ available through `POST /api/chat`.
 ```
 
 DataAgentKit compares result sets instead of requiring exact SQL text, because two valid queries can express the same answer.
+
+## Ground agents with PostgreSQL and dbt
+
+DuckDB remains the zero-configuration evaluation runtime. Production metadata can now be
+imported from PostgreSQL or dbt without sending schemas to an external service.
+
+```bash
+# dbt models, sources, descriptions, tags, lineage, and metrics
+dak catalog import-dbt \
+  --manifest target/manifest.json \
+  --output metadata/dbt-catalog.yml
+
+# PostgreSQL tables, columns, comments, and foreign keys
+pip install -e '.[postgres]'
+export DATABASE_URL='postgresql://...'
+dak catalog import-postgres \
+  --schema public \
+  --schema analytics \
+  --output metadata/postgres-catalog.yml
+```
+
+Credentials are used only for live introspection and are never written to the generated
+catalog. Schema-qualified tables are supported by the SQL validator.
+
+## Build a reproducible benchmark
+
+Rank agents from their versioned JSON reports. Correctness and safety are deliberately
+ranked ahead of latency.
+
+```bash
+dak benchmark \
+  --report reference=reports/reference.json \
+  --report candidate=reports/candidate.json \
+  --output benchmarks/leaderboard.json \
+  --markdown benchmarks/leaderboard.md
+```
+
+The leaderboard reports pass rate, schema hallucinations, policy violations, p50/p95
+latency, tool calls, and estimated model cost. See the checked-in
+[Northstar benchmark](benchmarks/leaderboard.md) for the current reproducible snapshot.
 
 ## Reference dataset: Northstar Retail
 
@@ -149,9 +228,10 @@ apps/web                         interactive public experience
 src/dataagentkit/agent.py        independently usable SQL Agent
 src/dataagentkit/api.py          FastAPI adapter
 src/dataagentkit/generator.py    deterministic data generator
-src/dataagentkit/metadata.py     metadata catalog and retrieval
+src/dataagentkit/metadata.py     DuckDB, PostgreSQL, and dbt metadata adapters
 src/dataagentkit/validators.py   SQL/schema/policy validation
-src/dataagentkit/runner.py       test runner and report comparison
+src/dataagentkit/runner.py       contract runner and report comparison
+src/dataagentkit/benchmark.py    correctness-first public leaderboard
 src/dataagentkit/adapters.py     Python callable and HTTP agent adapters
 src/dataagentkit/datasets.py     dataset catalog and local generators
 src/dataagentkit/data_quality.py synthetic-data contracts and fingerprint
@@ -194,14 +274,13 @@ Never commit model keys. `.env` files are ignored.
 
 This is an engineering toolkit, not a complete authorization system. Production deployments must also enforce permissions in the warehouse itself.
 
-## One-week roadmap
+## What ships and what comes next
 
-- **Day 1–2:** working dataset, reference agent, SQL/schema/policy validators
-- **Day 3:** golden suite, result equivalence, CLI reports
-- **Day 4:** public chat playground and inspectable traces
-- **Day 5:** CI workflow, Docker path, documentation
-- **Day 6:** schema-drift and metadata-injection mutation runner
-- **Day 7:** launch benchmark, public release, and contributor onboarding
+- **Shipped:** reference agent, playground, synthetic data, policy gates, result equivalence
+- **Shipped:** HTTP/Python adapters, Docker Compose, GitHub Action, dbt/PostgreSQL metadata
+- **Shipped:** benchmark generator, PR summaries, JSON artifacts, public demo
+- **Next:** schema-drift and metadata-injection mutation runner
+- **Next:** Snowflake/BigQuery execution adapters and community benchmark submissions
 
 The detailed scope, launch checklist, and first-week success measures are in
 [docs/launch-plan.md](docs/launch-plan.md).

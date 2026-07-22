@@ -129,6 +129,10 @@ const CHECKS = [
   ["result_equivalence", "Matches golden result"],
 ];
 
+const ACTION_SNIPPET = `- uses: Victoria824/DataAgentKit@v0.2.0
+  with:
+    suite: evals/retail.yml`;
+
 function pickDemo(question: string) {
   const normalized = question.toLowerCase();
   return (
@@ -373,6 +377,21 @@ export default function Home() {
             ))}
           </div>
           <div className="ci-callout"><code>dak test --suite evals/retail.yml</code><span>→</span><strong>Safe to merge</strong></div>
+          <div className="adoption-grid">
+            <article className="action-card">
+              <span>GitHub Action</span>
+              <h3>Make quality release-blocking.</h3>
+              <pre><code>{ACTION_SNIPPET}</code></pre>
+              <p>Posts a PR summary and uploads the full JSON evaluation artifact.</p>
+            </article>
+            <article className="benchmark-card">
+              <span>Reproducible benchmark</span>
+              <h3>Correctness before speed.</h3>
+              <div className="benchmark-head"><span>Agent</span><span>Pass</span><span>Hallucinations</span><span>p95</span></div>
+              <div className="benchmark-row"><strong>deterministic-reference</strong><b>100%</b><span>0</span><time>&lt; 1s</time></div>
+              <p>Bring any HTTP agent and generate the same versioned leaderboard locally or in CI.</p>
+            </article>
+          </div>
         </section>
       )}
 
@@ -381,9 +400,9 @@ export default function Home() {
         <div className="architecture-flow">
           <article><span>Experience layer</span><h3>SQL Agent</h3><p>Metadata retrieval, SQL generation, validation, read-only execution, and an inspectable chat UI.</p></article>
           <b>+</b>
-          <article><span>Quality layer</span><h3>DataAgentKit</h3><p>Contract tests, policy gates, result equivalence, regression comparison, and CI reports.</p></article>
+          <article><span>Quality layer</span><h3>DataAgentKit</h3><p>Contract tests, policy gates, result equivalence, benchmarks, and merge-blocking CI reports.</p></article>
           <b>=</b>
-          <article className="accent-card"><span>Production confidence</span><h3>Test the whole loop</h3><p>Use the included agent or connect your own Python callable, HTTP service, or framework adapter.</p></article>
+          <article className="accent-card"><span>Production confidence</span><h3>Test the whole loop</h3><p>Connect Python or HTTP agents and ground them with DuckDB, PostgreSQL, or dbt metadata.</p></article>
         </div>
       </section>
 

@@ -10,6 +10,7 @@ from rich.table import Table
 
 from .adapters import HttpAgentAdapter
 from .agent import OpenAIProvider, SqlAgent
+from .benchmark import build_leaderboard, save_leaderboard
 from .data_quality import validate_retail_data
 from .datasets import dataset_catalog, install_dataset
 from .generator import generate_retail_database
@@ -18,7 +19,9 @@ from .runner import EvaluationRunner, compare_reports
 
 app = typer.Typer(no_args_is_help=True, help="Test data agents before they test production.")
 dataset_app = typer.Typer(no_args_is_help=True, help="Discover and install evaluation datasets.")
+catalog_app = typer.Typer(no_args_is_help=True, help="Build grounding catalogs from data tools.")
 app.add_typer(dataset_app, name="dataset")
+app.add_typer(catalog_app, name="catalog")
 console = Console()
 
 
@@ -145,6 +148,74 @@ def install_dataset_command(
         console.print(f"[red]{exc}[/red]")
         raise typer.Exit(2) from exc
     console.print(f"[green]Created[/green] {path}")
+
+
+@catalog_app.command("import-dbt")
+def import_dbt_catalog(
+    manifest: Path = typer.Option(..., exists=True, help="Path to dbt manifest.json"),
+    output: Path = typer.Option(Path("metadata/dbt-catalog.yml")),
+) -> None:
+    """Convert dbt models, sources, lineage, descriptions, and metrics to a catalog."""
+    catalog = Catalog.from_dbt_manifest(manifest)
+    catalog.to_yaml(output)
+    console.print(
+        f"[green]Created[/green] {output} with {len(catalog.tables)} resources and "
+        f"{len(catalog.relationships)} lineage edges"
+    )
+
+
+@catalog_app.command("import-postgres")
+def import_postgres_catalog(
+    dsn: str = typer.Option(..., envvar="DATABASE_URL", help="PostgreSQL DSN or DATABASE_URL"),
+    schema: list[str] = typer.Option(["public"], "--schema"),
+    output: Path = typer.Option(Path("metadata/postgres-catalog.yml")),
+) -> None:
+    """Introspect PostgreSQL tables, columns, comments, and foreign keys."""
+    catalog = Catalog.from_postgres(dsn, schemas=tuple(schema))
+    catalog.to_yaml(output)
+    console.print(
+        f"[green]Created[/green] {output} with {len(catalog.tables)} tables and "
+        f"{len(catalog.relationships)} foreign keys"
+    )
+
+
+@app.command()
+def benchmark(
+    report: list[str] = typer.Option(
+        ...,
+        "--report",
+        help="Repeatable LABEL=PATH input, for example --report agent-a=reports/a.json",
+    ),
+    output: Path = typer.Option(Path("benchmarks/leaderboard.json")),
+    markdown: Path = typer.Option(Path("benchmarks/leaderboard.md")),
+) -> None:
+    """Build a correctness-first leaderboard from one or more evaluation reports."""
+    parsed: list[tuple[str, dict]] = []
+    for value in report:
+        if "=" not in value:
+            console.print(f"[red]Invalid report {value!r}; expected LABEL=PATH[/red]")
+            raise typer.Exit(2)
+        label, raw_path = value.split("=", 1)
+        path = Path(raw_path)
+        if not path.exists():
+            console.print(f"[red]Report not found: {path}[/red]")
+            raise typer.Exit(2)
+        parsed.append((label, json.loads(path.read_text())))
+    leaderboard = build_leaderboard(parsed)
+    save_leaderboard(leaderboard, json_path=output, markdown_path=markdown)
+    table = Table(title="DataAgentKit benchmark")
+    for column in ("Rank", "Agent", "Pass rate", "Hallucinations", "p95"):
+        table.add_column(column)
+    for entry in leaderboard["entries"]:
+        table.add_row(
+            str(entry["rank"]),
+            entry["label"],
+            f"{entry['pass_rate']:.0%}",
+            str(entry["schema_hallucinations"]),
+            f"{entry['p95_latency_ms']:.1f} ms",
+        )
+    console.print(table)
+    console.print(f"JSON: {output} · Markdown: {markdown}")
 
 
 @app.command()

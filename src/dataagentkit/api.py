@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -17,7 +18,15 @@ class ChatRequest(BaseModel):
     live: bool = False
 
 
-app = FastAPI(title="DataAgentKit SQL Agent", version="0.1.0")
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    database, _ = _paths()
+    if not database.exists():
+        generate_retail_database(database)
+    yield
+
+
+app = FastAPI(title="DataAgentKit SQL Agent", version="0.2.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
@@ -30,13 +39,6 @@ def _paths() -> tuple[Path, Path]:
     database = Path(os.getenv("DATAAGENTKIT_DATABASE", "data/retail.duckdb"))
     catalog = Path(os.getenv("DATAAGENTKIT_CATALOG", "metadata/catalog.yml"))
     return database, catalog
-
-
-@app.on_event("startup")
-def startup() -> None:
-    database, _ = _paths()
-    if not database.exists():
-        generate_retail_database(database)
 
 
 @app.get("/api/health")

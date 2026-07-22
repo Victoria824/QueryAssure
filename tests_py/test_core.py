@@ -1,8 +1,12 @@
+import json
 from pathlib import Path
 
 import pytest
+from fastapi.testclient import TestClient
 
 from dataagentkit.agent import SqlAgent
+from dataagentkit.api import app as api_app
+from dataagentkit.benchmark import build_leaderboard, render_markdown
 from dataagentkit.data_quality import validate_retail_data
 from dataagentkit.datasets import dataset_catalog
 from dataagentkit.generator import generate_retail_database
@@ -78,3 +82,114 @@ def test_synthetic_data_quality_and_dataset_catalog(retail_fixture):
     assert report["summary"]["failed"] == 0
     assert len(report["summary"]["fingerprint"]) == 16
     assert {item["name"] for item in dataset_catalog()} >= {"northstar-retail", "tpch"}
+
+
+def test_dbt_manifest_imports_models_sources_lineage_and_metrics(tmp_path):
+    manifest = {
+        "sources": {
+            "source.shop.orders": {
+                "resource_type": "source",
+                "name": "orders",
+                "identifier": "raw_orders",
+                "schema": "raw",
+                "description": "Raw orders",
+                "columns": {"order_id": {"data_type": "bigint", "description": "Key"}},
+                "depends_on": {"nodes": []},
+            }
+        },
+        "nodes": {
+            "model.shop.orders": {
+                "resource_type": "model",
+                "name": "orders",
+                "alias": "fct_orders",
+                "schema": "analytics",
+                "description": "Curated orders",
+                "columns": {
+                    "order_id": {"data_type": "bigint", "description": "Key"},
+                    "email": {
+                        "data_type": "varchar",
+                        "description": "Customer email",
+                        "meta": {"classification": "pii"},
+                    },
+                },
+                "tags": ["hourly"],
+                "depends_on": {"nodes": ["source.shop.orders"]},
+            }
+        },
+        "metrics": {
+            "metric.shop.revenue": {
+                "name": "revenue",
+                "description": "Net revenue",
+                "expression": "sum(net_revenue)",
+            }
+        },
+    }
+    path = tmp_path / "manifest.json"
+    path.write_text(json.dumps(manifest))
+    catalog = Catalog.from_dbt_manifest(path)
+    assert set(catalog.tables) == {"raw.raw_orders", "analytics.fct_orders"}
+    assert catalog.tables["analytics.fct_orders"]["columns"]["email"]["classification"] == "pii"
+    assert catalog.relationships == [
+        {"from": "analytics.fct_orders", "to": "raw.raw_orders", "kind": "depends_on"}
+    ]
+    assert catalog.metrics["revenue"]["sql"] == "sum(net_revenue)"
+    assert catalog.policies["forbidden_columns"] == ["analytics.fct_orders.email"]
+    output = catalog.to_yaml(tmp_path / "catalog.yml")
+    assert Catalog.from_yaml(output).tables == catalog.tables
+
+
+def test_qualified_catalog_tables_are_validated():
+    catalog = Catalog.from_column_rows(
+        [("analytics.orders", "order_id", "bigint"), ("analytics.orders", "amount", "decimal")]
+    )
+    checks = SqlValidator(catalog).validate(
+        "select o.order_id, o.amount from analytics.orders o"
+    )
+    assert all(check.passed for check in checks if check.name.startswith("schema_"))
+
+
+def test_benchmark_ranks_correctness_before_latency():
+    safe = {
+        "suite": "sample",
+        "summary": {"total": 2, "passed": 2, "failed": 0, "pass_rate": 1.0},
+        "results": [
+            {
+                "checks": [],
+                "trace": {"latency_ms": 200, "tool_calls": [{}, {}], "estimated_cost_usd": 0.01},
+            },
+            {
+                "checks": [],
+                "trace": {"latency_ms": 400, "tool_calls": [{}], "estimated_cost_usd": 0.01},
+            },
+        ],
+    }
+    fast_but_wrong = {
+        "suite": "sample",
+        "summary": {"total": 2, "passed": 1, "failed": 1, "pass_rate": 0.5},
+        "results": [
+            {
+                "checks": [{"name": "schema_columns", "passed": False}],
+                "trace": {"latency_ms": 20, "tool_calls": [], "estimated_cost_usd": 0},
+            }
+        ],
+    }
+    leaderboard = build_leaderboard([("safe", safe), ("fast", fast_but_wrong)])
+    assert [entry["label"] for entry in leaderboard["entries"]] == ["safe", "fast"]
+    assert leaderboard["entries"][1]["schema_hallucinations"] == 1
+    assert "| 1 | safe | 100%" in render_markdown(leaderboard)
+
+
+def test_reference_api_health_schema_and_chat(monkeypatch, retail_fixture):
+    database, _ = retail_fixture
+    monkeypatch.setenv("DATAAGENTKIT_DATABASE", str(database))
+    monkeypatch.setenv("DATAAGENTKIT_CATALOG", "metadata/catalog.yml")
+    with TestClient(api_app) as client:
+        assert client.get("/api/health").json()["status"] == "ok"
+        assert "analytics_orders" in client.get("/api/schema").json()["tables"]
+        response = client.post(
+            "/api/chat",
+            json={"question": "Which region generated the most net revenue in 2026?"},
+        )
+        assert response.status_code == 200
+        assert response.json()["error"] is None
+        assert response.json()["rows"]

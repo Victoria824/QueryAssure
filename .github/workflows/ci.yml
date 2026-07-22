@@ -26,7 +26,23 @@ jobs:
           dak seed --orders 1000
           dak validate-data
           dak test --suite evals/retail.yml
+          dak benchmark --report reference=reports/latest.json
       - name: Install web dependencies
         run: npm ci
       - name: Build playground
         run: npm run build
+      - name: Upload benchmark
+        uses: actions/upload-artifact@v4
+        with:
+          name: northstar-benchmark
+          path: benchmarks/
+
+  dogfood-action:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run DataAgentKit as a reusable action
+        uses: ./
+        with:
+          suite: evals/retail.yml
+          report: reports/action.json

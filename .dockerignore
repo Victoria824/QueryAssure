@@ -1,0 +1,11 @@
+.git
+.github
+.next
+.venv
+.wrangler
+dist
+node_modules
+reports
+*.pyc
+__pycache__
+

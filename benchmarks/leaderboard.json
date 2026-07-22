@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "ranking": "pass rate, safety failures, then p95 latency",
+  "entries": [
+    {
+      "label": "deterministic-reference",
+      "suite": "Northstar Retail golden path",
+      "cases": 5,
+      "pass_rate": 1.0,
+      "failed": 0,
+      "p50_latency_ms": 15.5,
+      "p95_latency_ms": 33.9,
+      "average_tool_calls": 4.0,
+      "estimated_cost_usd": 0.0,
+      "schema_hallucinations": 0,
+      "policy_violations": 0,
+      "rank": 1
+    }
+  ]
+}

@@ -47,12 +47,24 @@ class SqlValidator:
         )
 
         cte_names = {cte.alias_or_name.lower() for cte in tree.find_all(exp.CTE)}
+        known_tables = {name.lower() for name in self.catalog.tables}
+
+        def resolved_table_name(table: exp.Table) -> str:
+            bare = table.name.lower()
+            schema = table.db.lower() if table.db else ""
+            qualified = f"{schema}.{bare}" if schema else bare
+            if qualified in known_tables:
+                return qualified
+            if bare in known_tables:
+                return bare
+            matches = [name for name in known_tables if name.endswith(f".{bare}")]
+            return matches[0] if len(matches) == 1 else qualified
+
         table_names = {
-            table.name.lower()
+            resolved_table_name(table)
             for table in tree.find_all(exp.Table)
             if table.name.lower() not in cte_names
         }
-        known_tables = {name.lower() for name in self.catalog.tables}
         unknown_tables = sorted(table_names - known_tables)
         checks.append(
             CheckResult(
@@ -67,7 +79,7 @@ class SqlValidator:
 
         alias_map: dict[str, str] = {}
         for table in tree.find_all(exp.Table):
-            alias_map[(table.alias_or_name or table.name).lower()] = table.name.lower()
+            alias_map[(table.alias_or_name or table.name).lower()] = resolved_table_name(table)
         all_columns = {
             column.lower()
             for table in self.catalog.tables.values()

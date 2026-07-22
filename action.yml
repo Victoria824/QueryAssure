@@ -1,0 +1,92 @@
+name: DataAgentKit SQL Agent Gate
+description: Run SQL-agent contract tests and publish a merge-ready evaluation summary.
+author: Victoria Liu
+branding:
+  icon: check-circle
+  color: green
+
+inputs:
+  suite:
+    description: Contract suite path; falls back to the suite bundled with this action.
+    default: evals/retail.yml
+  database:
+    description: DuckDB evaluation database path.
+    default: data/retail.duckdb
+  catalog:
+    description: Grounding catalog path; falls back to the catalog bundled with this action.
+    default: metadata/catalog.yml
+  agent-url:
+    description: Optional HTTP SQL Agent endpoint. Leave empty to dogfood the reference agent.
+    default: ""
+  report:
+    description: JSON report output path.
+    default: reports/dataagentkit.json
+  python-version:
+    description: Python runtime used by the quality gate.
+    default: "3.12"
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install DataAgentKit
+      shell: bash
+      run: pip install "${{ github.action_path }}"
+
+    - name: Resolve bundled fixtures
+      id: fixtures
+      shell: bash
+      env:
+        INPUT_SUITE: ${{ inputs.suite }}
+        INPUT_CATALOG: ${{ inputs.catalog }}
+      run: |
+        suite="$INPUT_SUITE"
+        catalog="$INPUT_CATALOG"
+        if [[ ! -f "$suite" ]]; then suite="${{ github.action_path }}/$suite"; fi
+        if [[ ! -f "$catalog" ]]; then catalog="${{ github.action_path }}/$catalog"; fi
+        echo "suite=$suite" >> "$GITHUB_OUTPUT"
+        echo "catalog=$catalog" >> "$GITHUB_OUTPUT"
+
+    - name: Prepare deterministic fixture
+      shell: bash
+      env:
+        DATABASE: ${{ inputs.database }}
+      run: |
+        if [[ ! -f "$DATABASE" ]]; then
+          dak seed --database "$DATABASE" --orders 1000
+        fi
+
+    - name: Run SQL Agent contracts
+      shell: bash
+      env:
+        AGENT_URL: ${{ inputs.agent-url }}
+        DATABASE: ${{ inputs.database }}
+        REPORT: ${{ inputs.report }}
+        SUITE: ${{ steps.fixtures.outputs.suite }}
+        CATALOG: ${{ steps.fixtures.outputs.catalog }}
+      run: |
+        if [[ -n "$AGENT_URL" ]]; then
+          dak test-http --url "$AGENT_URL" --suite "$SUITE" --database "$DATABASE" --catalog "$CATALOG" --output "$REPORT"
+        else
+          dak test --suite "$SUITE" --database "$DATABASE" --catalog "$CATALOG" --output "$REPORT"
+        fi
+
+    - name: Publish job summary
+      if: always()
+      shell: bash
+      env:
+        REPORT: ${{ inputs.report }}
+      run: python "${{ github.action_path }}/scripts/github_summary.py" "$REPORT" >> "$GITHUB_STEP_SUMMARY"
+
+    - name: Upload evaluation report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: dataagentkit-report
+        path: ${{ inputs.report }}
+        if-no-files-found: warn
+

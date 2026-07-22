@@ -52,3 +52,12 @@ Golden tests use executable reference queries and compare result sets, not liter
 Chaos scenarios separately describe security, schema-drift, and metadata-injection failures.
 This combination makes the data useful for correctness, reliability, governance, and
 regression testing—not merely for making a chat demo look populated.
+
+## Implemented metadata bridges
+
+Version 0.2 can build the same policy-aware `Catalog` from a dbt `manifest.json` or a
+live PostgreSQL connection. The dbt adapter imports models, sources, descriptions, tags,
+lineage, metrics, and column classifications. PII, PHI, restricted, and sensitive
+classifications become forbidden-column policies automatically. The PostgreSQL adapter
+imports schema-qualified tables, columns, column comments, and foreign-key relationships
+while keeping the DSN out of the generated YAML.
