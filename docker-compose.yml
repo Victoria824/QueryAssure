@@ -7,7 +7,7 @@ services:
     environment:
       DATAAGENTKIT_DATABASE: /app/data/retail.duckdb
     volumes:
-      - ./data:/app/data
+      - retail-data:/app/data
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
       interval: 5s
@@ -22,3 +22,6 @@ services:
     depends_on:
       agent:
         condition: service_healthy
+
+volumes:
+  retail-data:
