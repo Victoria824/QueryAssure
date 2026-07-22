@@ -65,6 +65,10 @@ Open `http://localhost:3000` for the chat experience and `http://localhost:8000/
 for the reference Agent API. The web container talks to the API container, so the trace,
 SQL validation, and DuckDB execution are real rather than mocked.
 
+The API health endpoint is `http://localhost:8000/api/health`. The full stack is
+smoke-tested with Docker Engine in GitHub Actions and is compatible with Docker
+Desktop and Colima on macOS.
+
 ### Python development
 
 Requires Python 3.10+.
