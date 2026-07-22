@@ -2,6 +2,11 @@
 
 **Test data agents before they test production.**
 
+[![CI](https://github.com/Victoria824/DataAgentKit/actions/workflows/ci.yml/badge.svg)](https://github.com/Victoria824/DataAgentKit/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+
+[Try the zero-key playground](https://dataagentkit-playground.vicalayy.chatgpt.site) · [View the repository](https://github.com/Victoria824/DataAgentKit) · [Read the data strategy](docs/data-strategy.md)
+
 DataAgentKit is an open-source SQL Agent playground plus a contract-testing and CI quality-gate toolkit for agentic analytics. Ask questions in a polished chat interface, inspect the retrieved metadata, generated SQL, validation decisions, and results—then test the same agent for correctness, security, latency, and regressions.
 
 > Status: early alpha. The deterministic demo, HTTP/Python adapters, data-quality checks,
@@ -75,7 +80,7 @@ npm run dev
 
 Open `http://localhost:3000`.
 
-The hosted playground is a zero-key interactive walkthrough. For real query execution,
+The [hosted playground](https://dataagentkit-playground.vicalayy.chatgpt.site) is a zero-key interactive walkthrough. For real query execution,
 run `dak serve`; the same questions, metadata retrieval, SQL gates, and result traces are
 available through `POST /api/chat`.
 

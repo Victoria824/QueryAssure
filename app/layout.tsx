@@ -13,6 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://dataagentkit-playground.vicalayy.chatgpt.site"),
   title: "DataAgentKit — Test data agents before they test production",
   description:
     "An open-source SQL agent playground and CI quality gate for agentic analytics.",

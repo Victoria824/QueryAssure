@@ -215,7 +215,7 @@ export default function Home() {
           </button>
           <a href="#architecture">Architecture</a>
         </nav>
-        <a className="github-button" href="https://github.com" target="_blank" rel="noreferrer">
+        <a className="github-button" href="https://github.com/Victoria824/DataAgentKit" target="_blank" rel="noreferrer">
           Star on GitHub <span>↗</span>
         </a>
       </header>
