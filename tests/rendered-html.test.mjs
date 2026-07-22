@@ -36,6 +36,6 @@ test("renders the zero-key query experience and quality gates", async () => {
   assert.match(html, /result_equivalence/);
   assert.match(html, /deterministic demo/);
   const source = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
-  assert.match(source, /Victoria824\/QueryAssure@v0\.3\.0/);
+  assert.match(source, /Victoria824\/QueryAssure@v0\.3\.1/);
   assert.match(source, /Reproducible benchmark/);
 });
