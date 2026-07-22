@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
+from . import __version__
 from .agent import OpenAIProvider, SqlAgent
 from .generator import generate_retail_database
 from .metadata import Catalog
@@ -26,7 +27,7 @@ async def lifespan(_: FastAPI):
     yield
 
 
-app = FastAPI(title="QueryAssure SQL Agent", version="0.3.0", lifespan=lifespan)
+app = FastAPI(title="QueryAssure SQL Agent", version=__version__, lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],

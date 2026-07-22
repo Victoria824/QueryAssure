@@ -8,6 +8,7 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
+from . import __version__
 from .adapters import HttpAgentAdapter
 from .agent import OpenAIProvider, SqlAgent
 from .benchmark import build_leaderboard, save_leaderboard
@@ -26,6 +27,25 @@ catalog_app = typer.Typer(no_args_is_help=True, help="Build grounding catalogs f
 app.add_typer(dataset_app, name="dataset")
 app.add_typer(catalog_app, name="catalog")
 console = Console()
+
+
+def _version_callback(value: bool) -> None:
+    if value:
+        console.print(__version__)
+        raise typer.Exit()
+
+
+@app.callback()
+def main(
+    version: bool = typer.Option(
+        False,
+        "--version",
+        callback=_version_callback,
+        is_eager=True,
+        help="Show the installed QueryAssure version and exit.",
+    ),
+) -> None:
+    """Evaluate and release SQL Agents with confidence."""
 
 
 def _build_agent(database: Path, catalog_path: Path, live: bool = False) -> SqlAgent:

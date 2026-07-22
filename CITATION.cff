@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: If QueryAssure supports your research or engineering work, please cite the software.
+title: QueryAssure
+type: software
+authors:
+  - family-names: Liu
+    given-names: Victoria
+repository-code: https://github.com/Victoria824/QueryAssure
+url: https://victoria824.github.io/QueryAssure/
+license: Apache-2.0
+version: 0.3.1
+date-released: 2026-07-22
+keywords:
+  - SQL Agent
+  - text-to-SQL
+  - LLM evaluation
+  - agentic analytics
+  - metadata grounding
+  - regression testing

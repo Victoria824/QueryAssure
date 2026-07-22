@@ -3,10 +3,13 @@ from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
+from typer.testing import CliRunner
 
+from queryassure import __version__
 from queryassure.agent import SqlAgent
 from queryassure.api import app as api_app
 from queryassure.benchmark import build_leaderboard, render_markdown
+from queryassure.cli import app as cli_app
 from queryassure.data_quality import validate_retail_data
 from queryassure.datasets import dataset_catalog
 from queryassure.generator import generate_retail_database
@@ -193,3 +196,11 @@ def test_reference_api_health_schema_and_chat(monkeypatch, retail_fixture):
         assert response.status_code == 200
         assert response.json()["error"] is None
         assert response.json()["rows"]
+
+
+def test_public_version_is_consistent_across_cli_and_api():
+    assert __version__ == "0.3.1"
+    result = CliRunner().invoke(cli_app, ["--version"])
+    assert result.exit_code == 0
+    assert result.stdout.strip() == __version__
+    assert api_app.version == __version__

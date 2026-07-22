@@ -6,6 +6,7 @@ Contract testing, metadata grounding, SQL validation, benchmarking, and CI quali
 
 [![CI](https://github.com/Victoria824/QueryAssure/actions/workflows/ci.yml/badge.svg)](https://github.com/Victoria824/QueryAssure/actions/workflows/ci.yml)
 [![Playground](https://github.com/Victoria824/QueryAssure/actions/workflows/pages.yml/badge.svg)](https://victoria824.github.io/QueryAssure/)
+[![Release](https://img.shields.io/github/v/release/Victoria824/QueryAssure)](https://github.com/Victoria824/QueryAssure/releases/latest)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/Victoria824/QueryAssure?style=social)](https://github.com/Victoria824/QueryAssure/stargazers)
 
@@ -17,8 +18,9 @@ QueryAssure is an open-source SQL Agent playground plus a contract-testing and C
 
 If QueryAssure helps you catch a SQL Agent regression, consider [starring the repository](https://github.com/Victoria824/QueryAssure) and sharing the failing trace. That signal helps prioritize the next adapters and validators.
 
-> **v0.3:** QueryAssure brand, reference SQL Agent, HTTP/Python adapters, PostgreSQL and dbt metadata import,
-> correctness-first benchmarks, data-quality checks, and a reusable GitHub Action.
+> **v0.3.1:** QueryAssure brand, reference SQL Agent, HTTP/Python adapters, PostgreSQL and dbt metadata import,
+> correctness-first benchmarks, data-quality checks, reusable GitHub Action, GitHub Pages playground,
+> verified Python release artifacts, and versioned GHCR containers.
 
 ## Why this project exists
 
@@ -79,6 +81,15 @@ Desktop and Colima on macOS.
 
 Requires Python 3.10+.
 
+Install the verified wheel from the latest GitHub Release:
+
+```bash
+pip install https://github.com/Victoria824/QueryAssure/releases/download/v0.3.1/queryassure-0.3.1-py3-none-any.whl
+queryassure --version
+```
+
+Or install an editable checkout for development:
+
 ```bash
 python -m venv .venv
 source .venv/bin/activate
@@ -124,7 +135,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: Victoria824/QueryAssure@v0.3.0
+      - uses: Victoria824/QueryAssure@v0.3.1
         with:
           suite: evals/retail.yml
 ```
@@ -284,11 +295,14 @@ Never commit model keys. `.env` files are ignored.
 
 This is an engineering toolkit, not a complete authorization system. Production deployments must also enforce permissions in the warehouse itself.
 
+Security-sensitive reports should follow [SECURITY.md](SECURITY.md) instead of using a public issue.
+
 ## What ships and what comes next
 
 - **Shipped:** reference agent, playground, synthetic data, policy gates, result equivalence
 - **Shipped:** HTTP/Python adapters, Docker Compose, GitHub Action, dbt/PostgreSQL metadata
 - **Shipped:** benchmark generator, PR summaries, JSON artifacts, public demo
+- **Shipped:** versioned Python artifacts, checksums, GitHub Pages, and GHCR containers
 - **Next:** schema-drift and metadata-injection mutation runner
 - **Next:** Snowflake/BigQuery execution adapters and community benchmark submissions
 
@@ -306,3 +320,5 @@ Small, focused contributions are welcome—especially database adapters, determi
 ## License
 
 Apache-2.0. Third-party datasets retain their original licenses and are only fetched through optional adapters with attribution.
+
+Release history is maintained in [CHANGELOG.md](CHANGELOG.md). Academic and technical references may use [CITATION.cff](CITATION.cff).
