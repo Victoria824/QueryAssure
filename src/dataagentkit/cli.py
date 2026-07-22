@@ -1,0 +1,173 @@
+from __future__ import annotations
+
+import json
+import os
+from pathlib import Path
+
+import typer
+from rich.console import Console
+from rich.table import Table
+
+from .adapters import HttpAgentAdapter
+from .agent import OpenAIProvider, SqlAgent
+from .data_quality import validate_retail_data
+from .datasets import dataset_catalog, install_dataset
+from .generator import generate_retail_database
+from .metadata import Catalog
+from .runner import EvaluationRunner, compare_reports
+
+app = typer.Typer(no_args_is_help=True, help="Test data agents before they test production.")
+dataset_app = typer.Typer(no_args_is_help=True, help="Discover and install evaluation datasets.")
+app.add_typer(dataset_app, name="dataset")
+console = Console()
+
+
+def _build_agent(database: Path, catalog_path: Path, live: bool = False) -> SqlAgent:
+    catalog = Catalog.from_yaml(catalog_path)
+    provider = OpenAIProvider() if live else None
+    return SqlAgent(database, catalog, provider)
+
+
+@app.command()
+def seed(
+    database: Path = typer.Option(Path("data/retail.duckdb"), help="Output DuckDB file"),
+    orders: int = typer.Option(8_000, min=100, max=2_000_000),
+    random_seed: int = typer.Option(20260722, "--seed"),
+) -> None:
+    """Generate the deterministic retail evaluation database."""
+    path = generate_retail_database(database, seed=random_seed, orders=orders)
+    console.print(f"[green]Created[/green] {path} with {orders:,} orders")
+
+
+@app.command("validate-data")
+def validate_data(
+    database: Path = typer.Option(Path("data/retail.duckdb"), exists=True),
+    output: Path | None = typer.Option(None, help="Optional JSON report path"),
+) -> None:
+    """Validate synthetic-data integrity, coverage, privacy, and designed signals."""
+    report = validate_retail_data(database)
+    table = Table(title=f"Synthetic data · {report['summary']['fingerprint']}")
+    table.add_column("Check")
+    table.add_column("Result")
+    table.add_column("Observed", justify="right")
+    for check in report["checks"]:
+        table.add_row(
+            check["name"],
+            "[green]PASS[/green]" if check["passed"] else "[red]FAIL[/red]",
+            str(check["value"]),
+        )
+    console.print(table)
+    if output:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps(report, indent=2))
+    if report["summary"]["failed"]:
+        raise typer.Exit(1)
+
+
+@app.command("test")
+def test_suite(
+    suite: Path = typer.Option(Path("evals/retail.yml"), exists=True),
+    database: Path = typer.Option(Path("data/retail.duckdb")),
+    catalog: Path = typer.Option(Path("metadata/catalog.yml"), exists=True),
+    output: Path = typer.Option(Path("reports/latest.json")),
+    live: bool = typer.Option(False, help="Use the configured OpenAI model instead of demo mode"),
+) -> None:
+    """Run deterministic and agent-level quality checks."""
+    if not database.exists():
+        generate_retail_database(database)
+    agent = _build_agent(database, catalog, live=live)
+    runner = EvaluationRunner(agent, database, agent.catalog)
+    report = runner.run_file(suite)
+    runner.save_report(report, output)
+    table = Table(title=report["suite"])
+    table.add_column("Case")
+    table.add_column("Result")
+    table.add_column("Latency", justify="right")
+    for result in report["results"]:
+        table.add_row(
+            result["case_id"],
+            "[green]PASS[/green]" if result["passed"] else "[red]FAIL[/red]",
+            f"{result['trace']['latency_ms']:.1f} ms",
+        )
+    console.print(table)
+    summary = report["summary"]
+    console.print(
+        f"{summary['passed']}/{summary['total']} passed · report written to {output}"
+    )
+    if summary["failed"]:
+        raise typer.Exit(1)
+
+
+@app.command("test-http")
+def test_http(
+    url: str = typer.Option(..., help="Agent endpoint accepting {question} JSON"),
+    suite: Path = typer.Option(Path("evals/retail.yml"), exists=True),
+    database: Path = typer.Option(Path("data/retail.duckdb"), exists=True),
+    catalog: Path = typer.Option(Path("metadata/catalog.yml"), exists=True),
+    output: Path = typer.Option(Path("reports/http-latest.json")),
+) -> None:
+    """Run the same contract suite against any HTTP-accessible SQL agent."""
+    metadata = Catalog.from_yaml(catalog)
+    runner = EvaluationRunner(HttpAgentAdapter(url), database, metadata)
+    report = runner.run_file(suite)
+    runner.save_report(report, output)
+    console.print_json(data=report["summary"])
+    if report["summary"]["failed"]:
+        raise typer.Exit(1)
+
+
+@dataset_app.command("list")
+def list_datasets() -> None:
+    """Show bundled, generated, and external benchmark sources."""
+    table = Table(title="DataAgentKit datasets")
+    for column in ("Name", "Purpose", "License", "Bundled"):
+        table.add_column(column)
+    for item in dataset_catalog():
+        table.add_row(
+            str(item["name"]),
+            str(item["purpose"]),
+            str(item["license"]),
+            "yes" if item["bundled"] else "no",
+        )
+    console.print(table)
+
+
+@dataset_app.command("install")
+def install_dataset_command(
+    name: str,
+    output: Path = typer.Option(Path("data/dataset.duckdb")),
+    scale: float = typer.Option(0.01, min=0.001, max=100.0),
+) -> None:
+    """Generate a supported dataset without committing third-party data."""
+    try:
+        path = install_dataset(name, output, scale=scale)
+    except ValueError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(2) from exc
+    console.print(f"[green]Created[/green] {path}")
+
+
+@app.command()
+def compare(baseline: Path, candidate: Path) -> None:
+    """Compare two JSON reports and fail when quality regresses."""
+    result = compare_reports(json.loads(baseline.read_text()), json.loads(candidate.read_text()))
+    console.print_json(data=result)
+    if result["regression"]:
+        raise typer.Exit(1)
+
+
+@app.command()
+def serve(
+    host: str = "127.0.0.1",
+    port: int = 8000,
+    reload: bool = False,
+) -> None:
+    """Run the reference SQL Agent API."""
+    import uvicorn
+
+    os.environ.setdefault("DATAAGENTKIT_DATABASE", "data/retail.duckdb")
+    uvicorn.run("dataagentkit.api:app", host=host, port=port, reload=reload)
+
+
+if __name__ == "__main__":
+    app()

@@ -1,0 +1,73 @@
+name: Northstar Retail golden path
+version: 1
+cases:
+  - id: revenue_by_region
+    question: Which region generated the most net revenue in 2026?
+    expect:
+      required_tables: [analytics_orders]
+      forbidden_columns: [customers.email, customers.phone]
+      gold_sql: |
+        select region, round(sum(net_revenue), 2) as net_revenue,
+               count(distinct order_id) as orders
+        from analytics_orders
+        where ordered_at >= date '2026-01-01'
+        group by region
+        order by net_revenue desc
+    budgets: {max_latency_ms: 5000, max_tool_calls: 5}
+
+  - id: average_basket_by_channel
+    question: Compare average basket value by channel for 2026.
+    expect:
+      required_tables: [analytics_orders]
+      gold_sql: |
+        select channel, round(avg(net_revenue), 2) as average_order_value,
+               count(*) as orders
+        from analytics_orders
+        where ordered_at >= date '2026-01-01'
+        group by channel
+        order by average_order_value desc
+    budgets: {max_latency_ms: 5000, max_tool_calls: 5}
+
+  - id: refunds_by_category
+    question: Which product category has the highest refund amount?
+    expect:
+      required_tables: [refunds, order_items, products]
+      gold_sql: |
+        select p.category, round(sum(r.refund_amount), 2) as refund_amount,
+               count(*) as refunded_items
+        from refunds r
+        join order_items oi using(order_item_id)
+        join products p using(product_id)
+        group by p.category
+        order by refund_amount desc
+    budgets: {max_latency_ms: 5000, max_tool_calls: 5}
+
+  - id: frozen_stockouts
+    question: Show the weekly frozen category stock risk by region since April 2026.
+    expect:
+      required_tables: [inventory_snapshots, stores, products]
+      gold_sql: |
+        select s.region, i.snapshot_date,
+               round(avg(i.units_on_hand), 1) as avg_units_on_hand,
+               sum(case when i.units_on_hand <= i.reorder_point then 1 else 0 end) as low_stock_skus
+        from inventory_snapshots i
+        join stores s using(store_id)
+        join products p using(product_id)
+        where p.category = 'Frozen' and i.snapshot_date >= date '2026-04-01'
+        group by s.region, i.snapshot_date
+        order by i.snapshot_date, s.region
+    budgets: {max_latency_ms: 5000, max_tool_calls: 5}
+
+  - id: segment_performance
+    question: Compare customer segment revenue and average order value in 2026.
+    expect:
+      required_tables: [analytics_orders]
+      gold_sql: |
+        select segment, count(distinct customer_id) as customers,
+               round(sum(net_revenue), 2) as net_revenue,
+               round(avg(net_revenue), 2) as avg_order_value
+        from analytics_orders
+        where ordered_at >= date '2026-01-01'
+        group by segment
+        order by net_revenue desc
+    budgets: {max_latency_ms: 5000, max_tool_calls: 5}

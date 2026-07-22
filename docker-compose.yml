@@ -1,0 +1,10 @@
+services:
+  agent:
+    build: .
+    command: dak serve --host 0.0.0.0
+    ports:
+      - "8000:8000"
+    environment:
+      DATAAGENTKIT_DATABASE: /app/data/retail.duckdb
+    volumes:
+      - ./data:/app/data

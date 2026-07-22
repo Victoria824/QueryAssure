@@ -1,0 +1,154 @@
+version: 1
+dataset: northstar_retail
+description: Deterministic synthetic omnichannel grocery data for agent evaluation.
+
+policies:
+  tenant_column: tenant_id
+  required_tenant_id: 1
+  forbidden_columns:
+    - customers.email
+    - customers.phone
+
+metrics:
+  net_revenue:
+    description: Gross item revenue minus discounts and completed refunds.
+    sql: sum(quantity * unit_price - discount_amount) - sum(refund_amount)
+  average_order_value:
+    description: Net revenue divided by the number of completed orders.
+    sql: sum(net_revenue) / count(distinct order_id)
+  refund_rate:
+    description: Refunded item value divided by item value after discounts.
+    sql: sum(refund_amount) / sum(quantity * unit_price - discount_amount)
+  low_stock_sku:
+    description: A product-store snapshot at or below its reorder point.
+    sql: units_on_hand <= reorder_point
+
+relationships:
+  - from: orders.customer_id
+    to: customers.customer_id
+  - from: orders.store_id
+    to: stores.store_id
+  - from: order_items.order_id
+    to: orders.order_id
+  - from: order_items.product_id
+    to: products.product_id
+  - from: refunds.order_item_id
+    to: order_items.order_item_id
+  - from: inventory_snapshots.store_id
+    to: stores.store_id
+  - from: inventory_snapshots.product_id
+    to: products.product_id
+
+tables:
+  stores:
+    description: Physical retail locations and operating regions.
+    columns:
+      store_id: {type: integer, description: Unique store key}
+      store_name: {type: varchar, description: Human-readable store name}
+      region: {type: varchar, description: Canadian operating region}
+      opened_at: {type: date, description: Store opening date}
+      format: {type: varchar, description: Urban or suburban format}
+      tenant_id: {type: integer, description: Data access tenant}
+  customers:
+    description: Synthetic customer profiles; email and phone are restricted PII.
+    columns:
+      customer_id: {type: integer, description: Unique customer key}
+      customer_name: {type: varchar, description: Synthetic display name}
+      email: {type: varchar, description: Restricted synthetic email, classification: pii}
+      phone: {type: varchar, description: Restricted synthetic phone, classification: pii}
+      segment: {type: varchar, description: New, Occasional, Loyal, or High Value}
+      region: {type: varchar, description: Home region}
+      joined_at: {type: date, description: Account creation date}
+      tenant_id: {type: integer, description: Data access tenant}
+  products:
+    description: Grocery product catalog with retail price, cost, and category.
+    columns:
+      product_id: {type: integer, description: Unique product key}
+      product_name: {type: varchar, description: Product display name}
+      category: {type: varchar, description: Merchandise category}
+      brand: {type: varchar, description: Synthetic brand}
+      unit_price: {type: decimal, description: Regular selling price}
+      unit_cost: {type: decimal, description: Internal acquisition cost}
+      is_perishable: {type: boolean, description: Perishable inventory flag}
+      tenant_id: {type: integer, description: Data access tenant}
+  promotions:
+    description: Category promotions active during bounded date ranges.
+    columns:
+      promotion_id: {type: integer, description: Unique promotion key}
+      promotion_name: {type: varchar, description: Promotion name}
+      category: {type: varchar, description: Eligible category}
+      discount_pct: {type: decimal, description: Percentage discount}
+      starts_at: {type: date, description: First active date}
+      ends_at: {type: date, description: Last active date}
+      tenant_id: {type: integer, description: Data access tenant}
+  orders:
+    description: Omnichannel customer orders, including completed and cancelled states.
+    columns:
+      order_id: {type: bigint, description: Unique order key}
+      customer_id: {type: integer, description: Customer foreign key}
+      store_id: {type: integer, description: Fulfilment store foreign key}
+      ordered_at: {type: timestamp, description: Order creation timestamp}
+      channel: {type: varchar, description: Delivery, pickup, or in-store}
+      status: {type: varchar, description: Completed or cancelled}
+      tenant_id: {type: integer, description: Data access tenant}
+  order_items:
+    description: Product-level facts for every order.
+    columns:
+      order_item_id: {type: bigint, description: Unique line-item key}
+      order_id: {type: bigint, description: Order foreign key}
+      product_id: {type: integer, description: Product foreign key}
+      promotion_id: {type: integer, description: Optional promotion foreign key}
+      quantity: {type: integer, description: Purchased units}
+      unit_price: {type: decimal, description: Selling price at purchase time}
+      discount_amount: {type: decimal, description: Line-level discount value}
+      tenant_id: {type: integer, description: Data access tenant}
+  refunds:
+    description: Completed line-item refunds and reason codes.
+    columns:
+      refund_id: {type: bigint, description: Unique refund key}
+      order_item_id: {type: bigint, description: Refunded item foreign key}
+      refunded_at: {type: timestamp, description: Refund completion timestamp}
+      refund_amount: {type: decimal, description: Refunded monetary value}
+      reason: {type: varchar, description: Refund reason code}
+      tenant_id: {type: integer, description: Data access tenant}
+  inventory_snapshots:
+    description: Weekly product inventory levels by store.
+    columns:
+      snapshot_date: {type: date, description: Weekly snapshot date}
+      store_id: {type: integer, description: Store foreign key}
+      product_id: {type: integer, description: Product foreign key}
+      units_on_hand: {type: integer, description: Available units}
+      reorder_point: {type: integer, description: Replenishment threshold}
+      tenant_id: {type: integer, description: Data access tenant}
+  product_reviews:
+    description: Synthetic product ratings with intentionally sparse review text.
+    columns:
+      review_id: {type: bigint, description: Unique review key}
+      customer_id: {type: integer, description: Reviewer foreign key}
+      product_id: {type: integer, description: Product foreign key}
+      rating: {type: integer, description: Rating from one to five}
+      review_text: {type: varchar, description: Optional synthetic review text}
+      created_at: {type: timestamp, description: Review timestamp}
+      tenant_id: {type: integer, description: Data access tenant}
+  analytics_orders:
+    description: Curated completed-order view with gross revenue, net revenue, discounts, and refunds.
+    columns:
+      order_id: {type: bigint, description: Unique order key}
+      ordered_at: {type: timestamp, description: Order timestamp}
+      channel: {type: varchar, description: Fulfilment channel}
+      customer_id: {type: integer, description: Customer key}
+      store_id: {type: integer, description: Store key}
+      region: {type: varchar, description: Store region}
+      segment: {type: varchar, description: Customer segment}
+      gross_revenue: {type: decimal, description: Revenue before discounts and refunds}
+      discount_amount: {type: decimal, description: Applied discount value}
+      net_revenue: {type: decimal, description: Revenue after discounts and refunds}
+      refund_amount: {type: decimal, description: Completed refund value}
+  weekly_category_performance:
+    description: Weekly category revenue, units, and order counts for completed orders.
+    columns:
+      week: {type: date, description: Start of calendar week}
+      category: {type: varchar, description: Product category}
+      revenue: {type: decimal, description: Revenue after discounts, before refunds}
+      units: {type: bigint, description: Units sold}
+      orders: {type: bigint, description: Distinct completed orders}
