@@ -9,6 +9,6 @@ COPY worker ./worker
 COPY .openai ./.openai
 COPY next.config.ts tsconfig.json vite.config.ts eslint.config.mjs ./
 ENV NEXT_PUBLIC_DATA_AGENT_API=http://localhost:8000
+RUN npm run build
 EXPOSE 3000
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
-
+CMD ["npm", "run", "start", "--", "--hostname", "0.0.0.0"]
