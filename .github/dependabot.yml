@@ -1,0 +1,37 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: America/Toronto
+    groups:
+      frontend-runtime:
+        patterns:
+          - next
+          - react
+          - react-dom
+      cloudflare-toolchain:
+        patterns:
+          - "@cloudflare/*"
+          - vinext
+          - vite
+          - wrangler
+
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:15"
+      timezone: America/Toronto
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+      day: monday
+      time: "09:30"
+      timezone: America/Toronto

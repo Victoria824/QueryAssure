@@ -3,6 +3,14 @@
 All notable changes to QueryAssure are documented here. The project follows
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Security
+
+- upgraded the Next.js, Cloudflare, Vite, and Wrangler toolchain and pinned patched
+  transitive packages; `npm audit` reports zero known vulnerabilities
+- enabled private vulnerability reporting and added grouped Dependabot maintenance
+
 ## [0.3.1] - 2026-07-22
 
 ### Added
