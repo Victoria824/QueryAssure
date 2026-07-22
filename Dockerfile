@@ -5,6 +5,6 @@ COPY src ./src
 COPY metadata ./metadata
 COPY evals ./evals
 RUN pip install --no-cache-dir .
-RUN dak seed --database /app/data/retail.duckdb --orders 8000
+RUN queryassure seed --database /app/data/retail.duckdb --orders 8000
 EXPOSE 8000
-CMD ["dak", "serve", "--host", "0.0.0.0"]
+CMD ["queryassure", "serve", "--host", "0.0.0.0"]

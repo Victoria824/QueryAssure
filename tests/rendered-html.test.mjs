@@ -14,13 +14,13 @@ async function render() {
   );
 }
 
-test("server-renders the DataAgentKit playground", async () => {
+test("server-renders the QueryAssure playground", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, /<title>DataAgentKit/);
+  assert.match(html, /<title>QueryAssure/);
   assert.match(html, /Ask your data/);
   assert.match(html, /Northstar Retail Agent/);
   assert.match(html, /Eval suite/);
@@ -36,6 +36,6 @@ test("renders the zero-key query experience and quality gates", async () => {
   assert.match(html, /result_equivalence/);
   assert.match(html, /deterministic demo/);
   const source = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
-  assert.match(source, /Victoria824\/DataAgentKit@v0\.2\.0/);
+  assert.match(source, /Victoria824\/QueryAssure@v0\.3\.0/);
   assert.match(source, /Reproducible benchmark/);
 });

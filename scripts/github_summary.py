@@ -9,7 +9,7 @@ def main() -> None:
     if len(sys.argv) != 2:
         raise SystemExit("usage: github_summary.py REPORT.json")
     path = Path(sys.argv[1])
-    print("## DataAgentKit SQL Agent gate\n")
+    print("## QueryAssure SQL Agent gate\n")
     if not path.exists():
         print("Evaluation report was not produced. Inspect the preceding workflow step.")
         return

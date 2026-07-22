@@ -1,30 +1,32 @@
-# DataAgentKit
+# QueryAssure
 
 **Stop shipping SQL agents without tests.**
 
-[![CI](https://github.com/Victoria824/DataAgentKit/actions/workflows/ci.yml/badge.svg)](https://github.com/Victoria824/DataAgentKit/actions/workflows/ci.yml)
+Contract testing, metadata grounding, SQL validation, benchmarking, and CI quality gates for reliable SQL Agents.
+
+[![CI](https://github.com/Victoria824/QueryAssure/actions/workflows/ci.yml/badge.svg)](https://github.com/Victoria824/QueryAssure/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
-[Try the zero-key playground](https://dataagentkit-playground.vicalayy.chatgpt.site) · [View the repository](https://github.com/Victoria824/DataAgentKit) · [Read the data strategy](docs/data-strategy.md)
+[Try the zero-key playground](https://dataagentkit-playground.vicalayy.chatgpt.site) · [View the repository](https://github.com/Victoria824/QueryAssure) · [Read the data strategy](docs/data-strategy.md)
 
-![DataAgentKit shows a grounded SQL Agent trace, query result, and release-blocking quality gates](public/og.png)
+![QueryAssure shows a grounded SQL Agent trace, query result, and release-blocking quality gates](public/og.png)
 
-DataAgentKit is an open-source SQL Agent playground plus a contract-testing and CI quality-gate toolkit for agentic analytics. Ask questions in a polished chat interface, inspect the retrieved metadata, generated SQL, validation decisions, and results—then test the same agent for correctness, security, latency, and regressions.
+QueryAssure is an open-source SQL Agent playground plus a contract-testing and CI quality-gate toolkit for agentic analytics. Ask questions in a polished chat interface, inspect the retrieved metadata, generated SQL, validation decisions, and results—then test the same agent for correctness, security, latency, and regressions.
 
-> **v0.2:** reference SQL Agent, HTTP/Python adapters, PostgreSQL and dbt metadata import,
+> **v0.3:** QueryAssure brand, reference SQL Agent, HTTP/Python adapters, PostgreSQL and dbt metadata import,
 > correctness-first benchmarks, data-quality checks, and a reusable GitHub Action.
 
 ## Why this project exists
 
-Text-to-SQL demos are easy. Reliable data agents are not.
+Text-to-SQL demos are easy. Reliable SQL Agents are not.
 
-A production agent must survive prompt changes, model upgrades, schema drift, ambiguous metrics, sensitive columns, invalid joins, runaway queries, and unexpected tool traces. DataAgentKit treats those behaviours as testable software contracts.
+A production SQL Agent must survive prompt changes, model upgrades, schema drift, ambiguous metrics, sensitive columns, invalid joins, runaway queries, and unexpected tool traces. QueryAssure treats those behaviours as testable software contracts.
 
 ```text
 Question → metadata retrieval → SQL generation → policy validation
          → read-only execution → result → trace
                                   ↓
-                  DataAgentKit contract tests + CI gate
+                  QueryAssure contract tests + CI gate
 ```
 
 ## Two independent tools
@@ -40,7 +42,7 @@ Question → metadata retrieval → SQL generation → policy validation
 - visible tool trace and quality gates
 - FastAPI endpoint for local integrations
 
-### DataAgentKit
+### QueryAssure
 
 - YAML test cases that live beside your code
 - SQL parsing and read-only enforcement
@@ -56,8 +58,8 @@ Question → metadata retrieval → SQL generation → policy validation
 ### One command
 
 ```bash
-git clone https://github.com/Victoria824/DataAgentKit.git
-cd DataAgentKit
+git clone https://github.com/Victoria824/QueryAssure.git
+cd QueryAssure
 docker compose up --build
 ```
 
@@ -79,14 +81,14 @@ source .venv/bin/activate
 pip install -e '.[dev]'
 
 # Generate deterministic retail data
-dak seed
-dak validate-data
+queryassure seed
+queryassure validate-data
 
 # Run the included agent against the golden suite
-dak test --suite evals/retail.yml
+queryassure test --suite evals/retail.yml
 
 # Start the reference agent API
-dak serve
+queryassure serve
 ```
 
 The API is available at `http://127.0.0.1:8000`, with interactive documentation at `/docs`.
@@ -101,12 +103,12 @@ npm run dev
 Open `http://localhost:3000`.
 
 The [hosted playground](https://dataagentkit-playground.vicalayy.chatgpt.site) is a zero-key interactive walkthrough. For real query execution,
-run `dak serve`; the same questions, metadata retrieval, SQL gates, and result traces are
+run `queryassure serve`; the same questions, metadata retrieval, SQL gates, and result traces are
 available through `POST /api/chat`.
 
 ## Put the quality gate in every pull request
 
-DataAgentKit is also a composite GitHub Action. It can evaluate the bundled reference
+QueryAssure is also a composite GitHub Action. It can evaluate the bundled reference
 agent or any HTTP endpoint that returns an `AgentTrace`-shaped response.
 
 ```yaml
@@ -118,7 +120,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: Victoria824/DataAgentKit@v0.2.0
+      - uses: Victoria824/QueryAssure@v0.3.0
         with:
           suite: evals/retail.yml
 ```
@@ -146,7 +148,7 @@ agent and fixture as a zero-configuration smoke test.
     max_tool_calls: 5
 ```
 
-DataAgentKit compares result sets instead of requiring exact SQL text, because two valid queries can express the same answer.
+QueryAssure compares result sets instead of requiring exact SQL text, because two valid queries can express the same answer.
 
 ## Ground agents with PostgreSQL and dbt
 
@@ -155,14 +157,14 @@ imported from PostgreSQL or dbt without sending schemas to an external service.
 
 ```bash
 # dbt models, sources, descriptions, tags, lineage, and metrics
-dak catalog import-dbt \
+queryassure catalog import-dbt \
   --manifest target/manifest.json \
   --output metadata/dbt-catalog.yml
 
 # PostgreSQL tables, columns, comments, and foreign keys
 pip install -e '.[postgres]'
 export DATABASE_URL='postgresql://...'
-dak catalog import-postgres \
+queryassure catalog import-postgres \
   --schema public \
   --schema analytics \
   --output metadata/postgres-catalog.yml
@@ -177,7 +179,7 @@ Rank agents from their versioned JSON reports. Correctness and safety are delibe
 ranked ahead of latency.
 
 ```bash
-dak benchmark \
+queryassure benchmark \
   --report reference=reports/reference.json \
   --report candidate=reports/candidate.json \
   --output benchmarks/leaderboard.json \
@@ -216,29 +218,29 @@ Large third-party datasets are not vendored into this repository. Discover the s
 matrix or generate a local TPC-H database with:
 
 ```bash
-dak dataset list
-dak dataset install tpch --output data/tpch.duckdb --scale 0.1
+queryassure dataset list
+queryassure dataset install tpch --output data/tpch.duckdb --scale 0.1
 ```
 
 Northstar Retail is the default because it is deterministic, redistributable, fast enough
 for CI, and intentionally contains signals that ordinary random-data generators miss. Run
-`dak validate-data` to check referential integrity, price/refund bounds, synthetic-only PII,
+`queryassure validate-data` to check referential integrity, price/refund bounds, synthetic-only PII,
 time/category coverage, a designed stock-out pattern, and a reproducibility fingerprint.
 
 ## Architecture
 
 ```text
 apps/web                         interactive public experience
-src/dataagentkit/agent.py        independently usable SQL Agent
-src/dataagentkit/api.py          FastAPI adapter
-src/dataagentkit/generator.py    deterministic data generator
-src/dataagentkit/metadata.py     DuckDB, PostgreSQL, and dbt metadata adapters
-src/dataagentkit/validators.py   SQL/schema/policy validation
-src/dataagentkit/runner.py       contract runner and report comparison
-src/dataagentkit/benchmark.py    correctness-first public leaderboard
-src/dataagentkit/adapters.py     Python callable and HTTP agent adapters
-src/dataagentkit/datasets.py     dataset catalog and local generators
-src/dataagentkit/data_quality.py synthetic-data contracts and fingerprint
+src/queryassure/agent.py        independently usable SQL Agent
+src/queryassure/api.py          FastAPI adapter
+src/queryassure/generator.py    deterministic data generator
+src/queryassure/metadata.py     DuckDB, PostgreSQL, and dbt metadata adapters
+src/queryassure/validators.py   SQL/schema/policy validation
+src/queryassure/runner.py       contract runner and report comparison
+src/queryassure/benchmark.py    correctness-first public leaderboard
+src/queryassure/adapters.py     Python callable and HTTP agent adapters
+src/queryassure/datasets.py     dataset catalog and local generators
+src/queryassure/data_quality.py synthetic-data contracts and fingerprint
 evals/                           golden and chaos suites
 metadata/                        schema, relationships, policies, metrics
 ```
@@ -249,7 +251,7 @@ To evaluate an existing HTTP agent that accepts `{ "question": "..." }` and retu
 `AgentTrace`-shaped object:
 
 ```bash
-dak test-http \
+queryassure test-http \
   --url http://localhost:8000/api/chat \
   --database data/retail.duckdb \
   --suite evals/retail.yml
@@ -262,7 +264,7 @@ Demo mode is intentionally deterministic and free. To exercise a live OpenAI mod
 ```bash
 pip install -e '.[openai]'
 export OPENAI_API_KEY=your-key-in-your-shell
-dak test --live
+queryassure test --live
 ```
 
 Never commit model keys. `.env` files are ignored.

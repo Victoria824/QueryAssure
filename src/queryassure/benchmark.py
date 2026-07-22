@@ -64,9 +64,9 @@ def build_leaderboard(reports: list[tuple[str, dict[str, Any]]]) -> dict[str, An
 
 def render_markdown(leaderboard: dict[str, Any]) -> str:
     lines = [
-        "# DataAgentKit benchmark",
+        "# QueryAssure benchmark",
         "",
-        "Reproducible comparison generated from DataAgentKit JSON reports.",
+        "Reproducible comparison generated from QueryAssure JSON reports.",
         "",
         "| Rank | Agent | Pass rate | Schema hallucinations | "
         "Policy violations | p95 latency | Cost |",

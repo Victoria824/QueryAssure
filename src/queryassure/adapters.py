@@ -9,7 +9,7 @@ from .models import AgentTrace
 
 
 class CallableAgentAdapter:
-    """Wrap any Python callable so it can be evaluated by DataAgentKit."""
+    """Wrap any Python callable so it can be evaluated by QueryAssure."""
 
     def __init__(self, function: Callable[[str], AgentTrace | dict[str, Any]]) -> None:
         self.function = function

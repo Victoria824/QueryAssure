@@ -1,6 +1,6 @@
 # Evaluation data strategy
 
-DataAgentKit separates three kinds of data.
+QueryAssure separates three kinds of data.
 
 ## 1. Deterministic synthetic business data
 
@@ -15,7 +15,7 @@ Optional setup scripts can fetch projects such as dbt Jaffle Shop or Chinook. Th
 | Source | Best use here | Integration policy |
 |---|---|---|
 | [dbt Jaffle Shop](https://github.com/dbt-labs/jaffle-shop) | manifests, lineage, tests, business definitions | user installs the Apache-2.0 project |
-| [DuckDB TPC-H](https://duckdb.org/docs/current/core_extensions/tpch) | scale, latency, execution budgets, canonical answers | generated locally with `dak dataset install tpch` |
+| [DuckDB TPC-H](https://duckdb.org/docs/current/core_extensions/tpch) | scale, latency, execution budgets, canonical answers | generated locally with `queryassure dataset install tpch` |
 | [Chinook](https://github.com/lerocha/chinook-database) | small cross-dialect tutorials | optional MIT-licensed download |
 | [Open Food Facts](https://openfoodfacts.github.io/openfoodfacts-server/api/tutorials/license-be-on-the-legal-side/) | multilingual and messy product grounding | optional ODbL source; attribution and share-alike apply |
 | [NYC TLC](https://www.nyc.gov/site/tlc/about/raw-data.page) | high-volume public event data | user-provided public files, not vendored |
@@ -43,8 +43,8 @@ Synthetic data is not meant to imitate a real company's records. It is a control
 
 ## How Northstar earns trust
 
-Generation and validation are separate. `dak seed` creates the database from a fixed seed;
-`dak validate-data` independently verifies referential integrity, numeric bounds, synthetic
+Generation and validation are separate. `queryassure seed` creates the database from a fixed seed;
+`queryassure validate-data` independently verifies referential integrity, numeric bounds, synthetic
 PII, category/time coverage, and the deliberately planted Western frozen-stock signal. It
 also emits an aggregate fingerprint so contributors can identify unintended data drift.
 

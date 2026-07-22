@@ -1,6 +1,6 @@
-# DataAgentKit benchmark
+# QueryAssure benchmark
 
-Reproducible comparison generated from DataAgentKit JSON reports.
+Reproducible comparison generated from QueryAssure JSON reports.
 
 | Rank | Agent | Pass rate | Schema hallucinations | Policy violations | p95 latency | Cost |
 |---:|---|---:|---:|---:|---:|---:|

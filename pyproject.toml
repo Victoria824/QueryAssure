@@ -3,9 +3,9 @@ requires = ["hatchling>=1.25"]
 build-backend = "hatchling.build"
 
 [project]
-name = "dataagentkit"
-version = "0.2.0"
-description = "Contract tests and CI quality gates for agentic analytics"
+name = "queryassure"
+version = "0.3.0"
+description = "Contract tests, SQL validation, and CI quality gates for reliable SQL agents"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }
@@ -35,11 +35,11 @@ postgres = ["psycopg[binary]>=3.2.0"]
 dev = ["pytest>=8.3.0", "pytest-cov>=6.0.0", "ruff>=0.9.0"]
 
 [project.scripts]
-dak = "dataagentkit.cli:app"
-dataagent-chat = "dataagentkit.api:run"
+queryassure = "queryassure.cli:app"
+queryassure-chat = "queryassure.api:run"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/dataagentkit"]
+packages = ["src/queryassure"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests_py"]
@@ -53,4 +53,4 @@ target-version = "py310"
 select = ["E", "F", "I", "UP", "B"]
 
 [tool.ruff.lint.per-file-ignores]
-"src/dataagentkit/cli.py" = ["B008"]
+"src/queryassure/cli.py" = ["B008"]

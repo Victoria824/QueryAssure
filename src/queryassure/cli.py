@@ -17,7 +17,10 @@ from .generator import generate_retail_database
 from .metadata import Catalog
 from .runner import EvaluationRunner, compare_reports
 
-app = typer.Typer(no_args_is_help=True, help="Test data agents before they test production.")
+app = typer.Typer(
+    no_args_is_help=True,
+    help="Contract tests, SQL validation, and CI quality gates for reliable SQL agents.",
+)
 dataset_app = typer.Typer(no_args_is_help=True, help="Discover and install evaluation datasets.")
 catalog_app = typer.Typer(no_args_is_help=True, help="Build grounding catalogs from data tools.")
 app.add_typer(dataset_app, name="dataset")
@@ -122,7 +125,7 @@ def test_http(
 @dataset_app.command("list")
 def list_datasets() -> None:
     """Show bundled, generated, and external benchmark sources."""
-    table = Table(title="DataAgentKit datasets")
+    table = Table(title="QueryAssure datasets")
     for column in ("Name", "Purpose", "License", "Bundled"):
         table.add_column(column)
     for item in dataset_catalog():
@@ -203,7 +206,7 @@ def benchmark(
         parsed.append((label, json.loads(path.read_text())))
     leaderboard = build_leaderboard(parsed)
     save_leaderboard(leaderboard, json_path=output, markdown_path=markdown)
-    table = Table(title="DataAgentKit benchmark")
+    table = Table(title="QueryAssure benchmark")
     for column in ("Rank", "Agent", "Pass rate", "Hallucinations", "p95"):
         table.add_column(column)
     for entry in leaderboard["entries"]:
@@ -236,8 +239,8 @@ def serve(
     """Run the reference SQL Agent API."""
     import uvicorn
 
-    os.environ.setdefault("DATAAGENTKIT_DATABASE", "data/retail.duckdb")
-    uvicorn.run("dataagentkit.api:app", host=host, port=port, reload=reload)
+    os.environ.setdefault("QUERYASSURE_DATABASE", "data/retail.duckdb")
+    uvicorn.run("queryassure.api:app", host=host, port=port, reload=reload)
 
 
 if __name__ == "__main__":

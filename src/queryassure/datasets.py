@@ -21,20 +21,20 @@ DATASETS = [
     DatasetInfo(
         "northstar-retail",
         "Deterministic grocery analytics, policies, schema drift, and golden results",
-        "dak dataset install northstar-retail",
+        "queryassure dataset install northstar-retail",
         "Apache-2.0 (synthetic generator)",
         True,
     ),
     DatasetInfo(
         "tpch",
         "Scale and execution-budget testing with reproducible decision-support data",
-        "dak dataset install tpch --scale 0.1",
+        "queryassure dataset install tpch --scale 0.1",
         "TPC-H terms; generated locally by DuckDB",
     ),
     DatasetInfo(
         "jaffle-shop",
         "dbt manifests, lineage, semantic metadata, and documentation grounding",
-        "Use dbt-labs/jaffle_shop_duckdb and point DataAgentKit at its DuckDB file",
+        "Use dbt-labs/jaffle_shop_duckdb and point QueryAssure at its DuckDB file",
         "Apache-2.0",
     ),
     DatasetInfo(
@@ -82,5 +82,5 @@ def install_dataset(name: str, path: str | Path, *, scale: float = 0.01) -> Path
     if normalized == "tpch":
         return generate_tpch_database(path, scale=scale)
     raise ValueError(
-        f"{name!r} is an external adapter. Run `dak dataset list` for setup guidance."
+        f"{name!r} is an external adapter. Run `queryassure dataset list` for setup guidance."
     )

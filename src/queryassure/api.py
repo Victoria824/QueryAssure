@@ -26,7 +26,7 @@ async def lifespan(_: FastAPI):
     yield
 
 
-app = FastAPI(title="DataAgentKit SQL Agent", version="0.2.0", lifespan=lifespan)
+app = FastAPI(title="QueryAssure SQL Agent", version="0.3.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
@@ -36,8 +36,8 @@ app.add_middleware(
 
 
 def _paths() -> tuple[Path, Path]:
-    database = Path(os.getenv("DATAAGENTKIT_DATABASE", "data/retail.duckdb"))
-    catalog = Path(os.getenv("DATAAGENTKIT_CATALOG", "metadata/catalog.yml"))
+    database = Path(os.getenv("QUERYASSURE_DATABASE", "data/retail.duckdb"))
+    catalog = Path(os.getenv("QUERYASSURE_CATALOG", "metadata/catalog.yml"))
     return database, catalog
 
 

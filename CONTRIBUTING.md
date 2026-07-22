@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping make data agents safer to ship.
+Thanks for helping make SQL Agents safer to ship.
 
 ## Good first contributions
 

@@ -4,21 +4,21 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from dataagentkit.agent import SqlAgent
-from dataagentkit.api import app as api_app
-from dataagentkit.benchmark import build_leaderboard, render_markdown
-from dataagentkit.data_quality import validate_retail_data
-from dataagentkit.datasets import dataset_catalog
-from dataagentkit.generator import generate_retail_database
-from dataagentkit.metadata import Catalog
-from dataagentkit.runner import EvaluationRunner, compare_reports
-from dataagentkit.validators import SqlValidator
+from queryassure.agent import SqlAgent
+from queryassure.api import app as api_app
+from queryassure.benchmark import build_leaderboard, render_markdown
+from queryassure.data_quality import validate_retail_data
+from queryassure.datasets import dataset_catalog
+from queryassure.generator import generate_retail_database
+from queryassure.metadata import Catalog
+from queryassure.runner import EvaluationRunner, compare_reports
+from queryassure.validators import SqlValidator
 
 
 @pytest.fixture(scope="session")
 def retail_fixture(tmp_path_factory: pytest.TempPathFactory):
     database = generate_retail_database(
-        tmp_path_factory.mktemp("dataagentkit") / "retail.duckdb", orders=500
+        tmp_path_factory.mktemp("queryassure") / "retail.duckdb", orders=500
     )
     catalog = Catalog.from_yaml(Path("metadata/catalog.yml"))
     return database, catalog
@@ -181,8 +181,8 @@ def test_benchmark_ranks_correctness_before_latency():
 
 def test_reference_api_health_schema_and_chat(monkeypatch, retail_fixture):
     database, _ = retail_fixture
-    monkeypatch.setenv("DATAAGENTKIT_DATABASE", str(database))
-    monkeypatch.setenv("DATAAGENTKIT_CATALOG", "metadata/catalog.yml")
+    monkeypatch.setenv("QUERYASSURE_DATABASE", str(database))
+    monkeypatch.setenv("QUERYASSURE_CATALOG", "metadata/catalog.yml")
     with TestClient(api_app) as client:
         assert client.get("/api/health").json()["status"] == "ok"
         assert "analytics_orders" in client.get("/api/schema").json()["tables"]

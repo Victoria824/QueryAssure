@@ -81,7 +81,7 @@ class Catalog:
             import psycopg
         except ImportError as exc:  # pragma: no cover - depends on optional extra
             raise RuntimeError(
-                "Install dataagentkit[postgres] to import PostgreSQL metadata"
+                "Install queryassure[postgres] to import PostgreSQL metadata"
             ) from exc
 
         with psycopg.connect(dsn) as connection, connection.cursor() as cursor:

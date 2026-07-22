@@ -82,9 +82,9 @@ class OpenAIProvider:
         try:
             from openai import OpenAI
         except ImportError as exc:
-            raise RuntimeError("Install dataagentkit[openai] to use OpenAI") from exc
+            raise RuntimeError("Install queryassure[openai] to use OpenAI") from exc
         self.client = OpenAI()
-        self.model = model or os.getenv("DATAAGENTKIT_MODEL", "gpt-4.1-mini")
+        self.model = model or os.getenv("QUERYASSURE_MODEL", "gpt-4.1-mini")
 
     def generate_sql(self, question: str, schema: str) -> tuple[str, dict[str, int]]:
         response = self.client.responses.create(
@@ -111,7 +111,7 @@ class OpenAIProvider:
 
 
 class SqlAgent:
-    """A small reference data agent that is intentionally easy to test."""
+    """A small reference SQL Agent that is intentionally easy to test."""
 
     def __init__(
         self,

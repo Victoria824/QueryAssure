@@ -14,23 +14,23 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://dataagentkit-playground.vicalayy.chatgpt.site"),
-  title: "DataAgentKit — Test data agents before they test production",
+  title: "QueryAssure — Contract tests and quality gates for SQL Agents",
   description:
-    "An open-source SQL agent playground and CI quality gate for agentic analytics.",
+    "An open-source SQL Agent playground with contract tests, metadata grounding, validation, benchmarks, and CI quality gates.",
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
   },
   openGraph: {
-    title: "DataAgentKit",
-    description: "Test data agents before they test production.",
+    title: "QueryAssure",
+    description: "Stop shipping SQL Agents without tests.",
     type: "website",
-    images: [{ url: "/og.png", width: 1734, height: 907, alt: "DataAgentKit SQL agent trace" }],
+    images: [{ url: "/og.png", width: 1734, height: 907, alt: "QueryAssure SQL agent trace" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "DataAgentKit",
-    description: "Test data agents before they test production.",
+    title: "QueryAssure",
+    description: "Stop shipping SQL Agents without tests.",
     images: ["/og.png"],
   },
 };

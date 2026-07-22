@@ -15,7 +15,7 @@ dataset, one framework-independent test contract, and one clean contributor path
 
 ## Scope discipline
 
-Do not build another data platform. DataAgentKit owns the quality boundary around a data
+Do not build another data platform. QueryAssure owns the quality boundary around a data
 agent. Warehouses, semantic layers, model providers, and agent frameworks remain adapters.
 
 ## Launch checklist

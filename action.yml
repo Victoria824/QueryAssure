@@ -1,4 +1,4 @@
-name: DataAgentKit SQL Agent Gate
+name: QueryAssure SQL Agent Gate
 description: Run SQL-agent contract tests and publish a merge-ready evaluation summary.
 author: Victoria Liu
 branding:
@@ -20,7 +20,7 @@ inputs:
     default: ""
   report:
     description: JSON report output path.
-    default: reports/dataagentkit.json
+    default: reports/queryassure.json
   python-version:
     description: Python runtime used by the quality gate.
     default: "3.12"
@@ -33,7 +33,7 @@ runs:
       with:
         python-version: ${{ inputs.python-version }}
 
-    - name: Install DataAgentKit
+    - name: Install QueryAssure
       shell: bash
       run: pip install "${{ github.action_path }}"
 
@@ -57,7 +57,7 @@ runs:
         DATABASE: ${{ inputs.database }}
       run: |
         if [[ ! -f "$DATABASE" ]]; then
-          dak seed --database "$DATABASE" --orders 1000
+          queryassure seed --database "$DATABASE" --orders 1000
         fi
 
     - name: Run SQL Agent contracts
@@ -70,9 +70,9 @@ runs:
         CATALOG: ${{ steps.fixtures.outputs.catalog }}
       run: |
         if [[ -n "$AGENT_URL" ]]; then
-          dak test-http --url "$AGENT_URL" --suite "$SUITE" --database "$DATABASE" --catalog "$CATALOG" --output "$REPORT"
+          queryassure test-http --url "$AGENT_URL" --suite "$SUITE" --database "$DATABASE" --catalog "$CATALOG" --output "$REPORT"
         else
-          dak test --suite "$SUITE" --database "$DATABASE" --catalog "$CATALOG" --output "$REPORT"
+          queryassure test --suite "$SUITE" --database "$DATABASE" --catalog "$CATALOG" --output "$REPORT"
         fi
 
     - name: Publish job summary
@@ -86,7 +86,7 @@ runs:
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: dataagentkit-report
+        name: queryassure-report
         path: ${{ inputs.report }}
         if-no-files-found: warn
 

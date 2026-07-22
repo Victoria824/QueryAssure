@@ -19,7 +19,7 @@ type AgentTrace = {
   error?: string | null;
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_DATA_AGENT_API?.replace(/\/$/, "");
+const API_BASE = process.env.NEXT_PUBLIC_QUERYASSURE_API?.replace(/\/$/, "");
 
 const DEMOS: Array<{ keywords: string[]; question: string; data: Demo }> = [
   {
@@ -129,7 +129,7 @@ const CHECKS = [
   ["result_equivalence", "Matches golden result"],
 ];
 
-const ACTION_SNIPPET = `- uses: Victoria824/DataAgentKit@v0.2.0
+const ACTION_SNIPPET = `- uses: Victoria824/QueryAssure@v0.3.0
   with:
     suite: evals/retail.yml`;
 
@@ -205,9 +205,9 @@ export default function Home() {
   return (
     <main>
       <header className="topbar">
-        <a className="brand" href="#top" aria-label="DataAgentKit home">
-          <span className="brand-mark">D</span>
-          <span>DataAgentKit</span>
+        <a className="brand" href="#top" aria-label="QueryAssure home">
+          <span className="brand-mark">Q</span>
+          <span>QueryAssure</span>
           <em>alpha</em>
         </a>
         <nav aria-label="Primary navigation">
@@ -219,15 +219,15 @@ export default function Home() {
           </button>
           <a href="#architecture">Architecture</a>
         </nav>
-        <a className="github-button" href="https://github.com/Victoria824/DataAgentKit" target="_blank" rel="noreferrer">
+        <a className="github-button" href="https://github.com/Victoria824/QueryAssure" target="_blank" rel="noreferrer">
           Star on GitHub <span>↗</span>
         </a>
       </header>
 
       <section className="hero" id="top">
         <div>
-          <span className="eyebrow"><i /> Open-source agentic analytics testing</span>
-          <h1>Ask your data.<br /><span>Inspect every decision.</span></h1>
+          <span className="eyebrow"><i /> Open-source SQL Agent testing</span>
+          <h1>Ask your data.<br /><span>Trust every query.</span></h1>
           <p>
             A complete SQL Agent playground paired with contract tests, policy validation,
             and CI quality gates. The demo runs on deterministic synthetic retail data.
@@ -254,7 +254,7 @@ export default function Home() {
             <div className="conversation">
               <div className="message user-message">{active.question}</div>
               <div className="message agent-message">
-                <div className="agent-avatar">D</div>
+                <div className="agent-avatar">Q</div>
                 <div>
                   <p>{loading ? "Retrieving metadata and validating a query…" : active.data.answer}</p>
                   {!loading && (
@@ -376,7 +376,7 @@ export default function Home() {
               <div className="suite-row" key={name}><strong>{name}</strong><span className="pass">PASS</span><span>5 / 5</span><time>{latency}</time></div>
             ))}
           </div>
-          <div className="ci-callout"><code>dak test --suite evals/retail.yml</code><span>→</span><strong>Safe to merge</strong></div>
+          <div className="ci-callout"><code>queryassure test --suite evals/retail.yml</code><span>→</span><strong>Safe to merge</strong></div>
           <div className="adoption-grid">
             <article className="action-card">
               <span>GitHub Action</span>
@@ -400,15 +400,15 @@ export default function Home() {
         <div className="architecture-flow">
           <article><span>Experience layer</span><h3>SQL Agent</h3><p>Metadata retrieval, SQL generation, validation, read-only execution, and an inspectable chat UI.</p></article>
           <b>+</b>
-          <article><span>Quality layer</span><h3>DataAgentKit</h3><p>Contract tests, policy gates, result equivalence, benchmarks, and merge-blocking CI reports.</p></article>
+          <article><span>Quality layer</span><h3>QueryAssure</h3><p>Contract tests, policy gates, result equivalence, benchmarks, and merge-blocking CI reports.</p></article>
           <b>=</b>
           <article className="accent-card"><span>Production confidence</span><h3>Test the whole loop</h3><p>Connect Python or HTTP agents and ground them with DuckDB, PostgreSQL, or dbt metadata.</p></article>
         </div>
       </section>
 
       <footer>
-        <div className="brand"><span className="brand-mark">D</span><span>DataAgentKit</span></div>
-        <p>Built for engineers who refuse to ship a data agent without tests.</p>
+        <div className="brand"><span className="brand-mark">Q</span><span>QueryAssure</span></div>
+        <p>Built for engineers who refuse to ship a SQL Agent without tests.</p>
         <span>Apache-2.0 · 2026</span>
       </footer>
     </main>
