@@ -1,4 +1,5 @@
 :root {
+  --font-geist-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
   --ink: #141712;
   --muted: #687064;
   --line: #dfe4da;

@@ -1,0 +1,47 @@
+name: Benchmark submission
+description: Share a reproducible SQL Agent evaluation result
+title: "[Benchmark]: "
+labels: [benchmark, community]
+body:
+  - type: input
+    id: agent
+    attributes:
+      label: Agent and version
+      placeholder: framework/model/provider plus version or commit
+    validations:
+      required: true
+  - type: input
+    id: suite
+    attributes:
+      label: Evaluation suite and dataset
+      placeholder: evals/retail.yml with Northstar Retail fingerprint
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Reproduction command
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: metrics
+    attributes:
+      label: Results
+      description: Include pass rate, schema hallucinations, policy violations, latency, tool calls, and estimated cost when available.
+      render: json
+    validations:
+      required: true
+  - type: input
+    id: artifact
+    attributes:
+      label: Public report or repository URL
+    validations:
+      required: true
+  - type: checkboxes
+    id: reproducible
+    attributes:
+      label: Reproducibility
+      options:
+        - label: The submission contains no secrets or private data and can be reproduced by another user.
+          required: true

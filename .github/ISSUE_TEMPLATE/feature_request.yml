@@ -1,0 +1,47 @@
+name: Adapter or feature request
+description: Propose a focused capability for reliable SQL Agents
+title: "[Proposal]: "
+labels: [enhancement, triage]
+body:
+  - type: dropdown
+    id: type
+    attributes:
+      label: Proposal type
+      options:
+        - Database adapter
+        - Agent-framework adapter
+        - SQL or policy validator
+        - Dataset or benchmark
+        - Evaluation metric
+        - Developer experience
+        - Documentation
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Reliability problem
+      description: What SQL Agent failure or developer pain does this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: contract
+    attributes:
+      label: Proposed contract or interface
+      description: Show a small API, YAML, CLI, or expected input/output example.
+      render: yaml
+    validations:
+      required: true
+  - type: textarea
+    id: fixture
+    attributes:
+      label: Deterministic test strategy
+      description: Explain how CI can test this without a live warehouse, paid model, or secret.
+    validations:
+      required: true
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      options:
+        - label: I am interested in implementing this proposal.

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://victoria824.github.io/QueryAssure/sitemap.xml

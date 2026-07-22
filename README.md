@@ -5,13 +5,17 @@
 Contract testing, metadata grounding, SQL validation, benchmarking, and CI quality gates for reliable SQL Agents.
 
 [![CI](https://github.com/Victoria824/QueryAssure/actions/workflows/ci.yml/badge.svg)](https://github.com/Victoria824/QueryAssure/actions/workflows/ci.yml)
+[![Playground](https://github.com/Victoria824/QueryAssure/actions/workflows/pages.yml/badge.svg)](https://victoria824.github.io/QueryAssure/)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/Victoria824/QueryAssure?style=social)](https://github.com/Victoria824/QueryAssure/stargazers)
 
-[Try the zero-key playground](https://dataagentkit-playground.vicalayy.chatgpt.site) · [View the repository](https://github.com/Victoria824/QueryAssure) · [Read the data strategy](docs/data-strategy.md)
+[Try the zero-key playground](https://victoria824.github.io/QueryAssure/) · [View the repository](https://github.com/Victoria824/QueryAssure) · [Read the data strategy](docs/data-strategy.md)
 
 ![QueryAssure shows a grounded SQL Agent trace, query result, and release-blocking quality gates](public/og.png)
 
 QueryAssure is an open-source SQL Agent playground plus a contract-testing and CI quality-gate toolkit for agentic analytics. Ask questions in a polished chat interface, inspect the retrieved metadata, generated SQL, validation decisions, and results—then test the same agent for correctness, security, latency, and regressions.
+
+If QueryAssure helps you catch a SQL Agent regression, consider [starring the repository](https://github.com/Victoria824/QueryAssure) and sharing the failing trace. That signal helps prioritize the next adapters and validators.
 
 > **v0.3:** QueryAssure brand, reference SQL Agent, HTTP/Python adapters, PostgreSQL and dbt metadata import,
 > correctness-first benchmarks, data-quality checks, and a reusable GitHub Action.
@@ -102,7 +106,7 @@ npm run dev
 
 Open `http://localhost:3000`.
 
-The [hosted playground](https://dataagentkit-playground.vicalayy.chatgpt.site) is a zero-key interactive walkthrough. For real query execution,
+The [hosted playground](https://victoria824.github.io/QueryAssure/) is a zero-key interactive walkthrough. For real query execution,
 run `queryassure serve`; the same questions, metadata retrieval, SQL gates, and result traces are
 available through `POST /api/chat`.
 
@@ -294,6 +298,10 @@ The detailed scope, launch checklist, and first-week success measures are in
 ## Contributing
 
 Small, focused contributions are welcome—especially database adapters, deterministic policy rules, reproducible failure cases, and documentation fixes. See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+- [Report a reproducible bug](https://github.com/Victoria824/QueryAssure/issues/new?template=bug_report.yml)
+- [Propose an adapter or validator](https://github.com/Victoria824/QueryAssure/issues/new?template=feature_request.yml)
+- [Submit a benchmark result](https://github.com/Victoria824/QueryAssure/issues/new?template=benchmark_submission.yml)
 
 ## License
 
