@@ -5,6 +5,24 @@ All notable changes to QueryAssure are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-07-24
+
+### Added
+
+- `queryassure demo` zero-key workflow with five golden contracts and an injected,
+  release-blocking schema hallucination
+- self-contained HTML evidence reports for local runs and GitHub Action artifacts
+- `queryassure init` starter contracts and pull-request workflow scaffolding
+- `queryassure challenge` adversarial mutation coverage for schema, policy, write,
+  required-source, and parse failures
+- escaped agent output in HTML reports to keep untrusted traces inert
+
+### Changed
+
+- positioned QueryAssure as “Pytest for SQL Agents” with a 30-second first-run path
+- extended the reusable GitHub Action to publish JSON and HTML reports
+- grouped and limited automated dependency-update pull requests
+
 ### Security
 
 - upgraded the Next.js, Cloudflare, Vite, and Wrangler toolchain and pinned patched
@@ -51,6 +69,7 @@ All notable changes to QueryAssure are documented here. The project follows
 
 - first public evaluation contracts, validators, benchmark tools, and Docker workflow
 
+[0.4.0]: https://github.com/Victoria824/QueryAssure/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/Victoria824/QueryAssure/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/Victoria824/QueryAssure/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Victoria824/QueryAssure/releases/tag/v0.2.0

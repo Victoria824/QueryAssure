@@ -39,6 +39,12 @@ button { color: inherit; }
 .hero h1 { margin: 18px 0; font-size: clamp(50px, 6vw, 86px); line-height: .94; letter-spacing: -.065em; font-weight: 650; }
 .hero h1 span { color: #7b8476; }
 .hero p { max-width: 700px; color: var(--muted); font-size: 17px; line-height: 1.65; margin: 0; }
+.demo-command { max-width: 760px; margin-top: 22px; border: 1px solid #343934; background: #171a17; color: #e5e9e1; border-radius: 11px; padding: 8px 9px 8px 15px; display: flex; align-items: center; justify-content: space-between; gap: 14px; box-shadow: 0 12px 30px rgba(30, 37, 27, .12); }
+.demo-command div { min-width: 0; display: flex; align-items: center; gap: 10px; overflow: hidden; }
+.demo-command span { color: var(--green); font: 700 12px var(--font-geist-mono), monospace; }
+.demo-command code { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 10px var(--font-geist-mono), monospace; }
+.demo-command button { flex: 0 0 auto; border: 1px solid #495047; color: var(--green); background: #262b26; border-radius: 7px; padding: 8px 11px; font: 700 9px var(--font-geist-mono), monospace; text-transform: uppercase; letter-spacing: .06em; cursor: pointer; }
+.demo-note { display: block; color: #7c8578; font: 9px var(--font-geist-mono), monospace; margin: 8px 0 0 2px; text-transform: uppercase; letter-spacing: .06em; }
 .hero-meta { display: flex; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; min-width: 390px; }
 .hero-meta div { background: var(--white); padding: 18px 20px; flex: 1; }
 .hero-meta strong { display: block; font-size: 25px; letter-spacing: -.04em; }
@@ -97,7 +103,9 @@ td:not(:first-child), th:not(:first-child) { text-align: right; }
 .eval-header { display: flex; justify-content: space-between; align-items: end; border-bottom: 1px solid #343934; padding-bottom: 28px; }.eval-header h2 { font-size: 38px; margin: 12px 0 0; letter-spacing: -.04em; }.eval-header .eyebrow { color: #aeb6aa; }.eval-header button { background: var(--green); border: 0; border-radius: 9px; padding: 12px 16px; font-weight: 750; cursor: pointer; }
 .score-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: #353a35; margin: 30px 0; border: 1px solid #353a35; border-radius: 12px; overflow: hidden; }.score-grid article { background: #202420; padding: 22px; }.score-grid span, .score-grid small { color: #8e978c; display: block; }.score-grid span { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; }.score-grid strong { display: block; font-size: 34px; margin: 8px 0; color: var(--green); }.score-grid small { font-size: 10px; }
 .suite-table { border: 1px solid #353a35; border-radius: 12px; overflow: hidden; }.suite-row { display: grid; grid-template-columns: 1.8fr .6fr .6fr .6fr; padding: 15px 18px; border-bottom: 1px solid #2f342f; align-items: center; font: 11px var(--font-geist-mono), monospace; }.suite-row:last-child { border: 0; }.suite-head { background: #252a25; color: #899187; text-transform: uppercase; letter-spacing: .06em; }.pass { color: var(--green); }.suite-row time { color: #90988e; }
+.regression-row { background: #2b1d1b; }.fail { color: #ff8173; font-weight: 800; }
 .ci-callout { margin-top: 24px; border: 1px solid #3b4339; background: #20271f; border-radius: 10px; padding: 16px 18px; display: flex; gap: 14px; align-items: center; }.ci-callout code { color: #c8d3c4; }.ci-callout span { color: #6d766b; }.ci-callout strong { color: var(--green); }
+.blocked-callout { border-color: #65372f; background: #2b1d1b; }.blocked-callout strong { color: #ff8173; text-transform: uppercase; }
 .adoption-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
 .adoption-grid article { border: 1px solid #353a35; background: #202420; border-radius: 12px; padding: 22px; min-width: 0; }
 .adoption-grid article > span { color: #8e978c; text-transform: uppercase; letter-spacing: .08em; font: 10px var(--font-geist-mono), monospace; }
@@ -125,6 +133,7 @@ footer { max-width: 1400px; margin: 0 auto; border-top: 1px solid var(--line); p
 @media (max-width: 560px) {
   .github-button { font-size: 0; }.github-button::before { content: "GitHub"; font-size: 12px; }
   .hero h1 { font-size: 48px; }.hero-meta { display: grid; grid-template-columns: 1fr; }.hero-meta div { display: flex; justify-content: space-between; align-items: center; }
+  .demo-command { align-items: stretch; }.demo-command code { white-space: normal; overflow-wrap: anywhere; }.demo-command button { align-self: center; }
   .conversation { padding: 20px 14px; }.result-card { margin-left: 0; }.composer { margin-inline: 12px; }.suggestions { padding-inline: 12px; }
   .eval-header { align-items: start; gap: 20px; }.eval-header h2 { font-size: 28px; }.score-grid { grid-template-columns: 1fr; }
   .benchmark-head, .benchmark-row { grid-template-columns: 1.3fr .5fr .7fr; }.benchmark-head span:last-child, .benchmark-row time { display: none; }

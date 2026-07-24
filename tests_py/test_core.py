@@ -9,12 +9,16 @@ from queryassure import __version__
 from queryassure.agent import SqlAgent
 from queryassure.api import app as api_app
 from queryassure.benchmark import build_leaderboard, render_markdown
+from queryassure.challenge import run_challenge
 from queryassure.cli import app as cli_app
 from queryassure.data_quality import validate_retail_data
 from queryassure.datasets import dataset_catalog
+from queryassure.demo import run_demo
 from queryassure.generator import generate_retail_database
 from queryassure.metadata import Catalog
+from queryassure.reporting import render_html_report
 from queryassure.runner import EvaluationRunner, compare_reports
+from queryassure.scaffolding import create_starter_project
 from queryassure.validators import SqlValidator
 
 
@@ -199,8 +203,73 @@ def test_reference_api_health_schema_and_chat(monkeypatch, retail_fixture):
 
 
 def test_public_version_is_consistent_across_cli_and_api():
-    assert __version__ == "0.3.1"
+    assert __version__ == "0.4.0"
     result = CliRunner().invoke(cli_app, ["--version"])
     assert result.exit_code == 0
     assert result.stdout.strip() == __version__
     assert api_app.version == __version__
+
+
+def test_demo_catches_regression_and_renders_shareable_report(tmp_path):
+    report, json_path, html_path = run_demo(tmp_path / "demo")
+    assert report["summary"] == {
+        "total": 6,
+        "passed": 5,
+        "failed": 1,
+        "pass_rate": pytest.approx(5 / 6),
+    }
+    assert report["demo"]["regressions_caught"] == 1
+    assert json_path.exists()
+    html = html_path.read_text()
+    assert "BLOCKED FROM MERGE" in html
+    assert "schema_hallucination_regression" in html
+    assert "customers.lifetime_value" in html
+
+
+def test_html_report_escapes_untrusted_agent_output(tmp_path):
+    report = {
+        "suite": "<script>alert(1)</script>",
+        "summary": {"total": 1, "passed": 1, "failed": 0, "pass_rate": 1.0},
+        "results": [
+            {
+                "case_id": "escape",
+                "question": "<img src=x onerror=alert(1)>",
+                "passed": True,
+                "checks": [],
+                "trace": {"sql": "select '<unsafe>'", "latency_ms": 1, "rows": []},
+            }
+        ],
+    }
+    output = render_html_report(report, tmp_path / "report.html")
+    html = output.read_text()
+    assert "<script>alert(1)</script>" not in html
+    assert "&lt;script&gt;alert(1)&lt;/script&gt;" in html
+    assert "<img src=x onerror=alert(1)>" not in html
+
+
+def test_init_scaffolds_runnable_contracts_without_overwriting(tmp_path):
+    paths = create_starter_project(tmp_path)
+    assert {path.relative_to(tmp_path).as_posix() for path in paths} == {
+        "queryassure/evals.yml",
+        "queryassure/catalog.yml",
+        "queryassure/README.md",
+        ".github/workflows/queryassure.yml",
+    }
+    assert "Victoria824/QueryAssure@v0.4.0" in (
+        tmp_path / ".github/workflows/queryassure.yml"
+    ).read_text()
+    with pytest.raises(FileExistsError):
+        create_starter_project(tmp_path)
+
+
+def test_adversarial_challenge_detects_every_mutation(retail_fixture, tmp_path):
+    _, catalog = retail_fixture
+    report, json_path, html_path = run_challenge(catalog, tmp_path / "challenge")
+    assert report["summary"] == {
+        "total": 6,
+        "passed": 6,
+        "failed": 0,
+        "pass_rate": 1.0,
+    }
+    assert json_path.exists()
+    assert "SAFE TO MERGE" in html_path.read_text()

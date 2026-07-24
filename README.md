@@ -1,8 +1,9 @@
 # QueryAssure
 
-**Stop shipping SQL agents without tests.**
+**Pytest for SQL Agents.**
 
-Contract testing, metadata grounding, SQL validation, benchmarking, and CI quality gates for reliable SQL Agents.
+Catch hallucinated columns, unsafe SQL, semantic regressions, and policy violations
+before they reach production.
 
 [![CI](https://github.com/Victoria824/QueryAssure/actions/workflows/ci.yml/badge.svg)](https://github.com/Victoria824/QueryAssure/actions/workflows/ci.yml)
 [![Playground](https://github.com/Victoria824/QueryAssure/actions/workflows/pages.yml/badge.svg)](https://victoria824.github.io/QueryAssure/)
@@ -10,17 +11,46 @@ Contract testing, metadata grounding, SQL validation, benchmarking, and CI quali
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/Victoria824/QueryAssure?style=social)](https://github.com/Victoria824/QueryAssure/stargazers)
 
-[Try the zero-key playground](https://victoria824.github.io/QueryAssure/) · [View the repository](https://github.com/Victoria824/QueryAssure) · [Read the data strategy](docs/data-strategy.md)
+[Try the zero-key playground](https://victoria824.github.io/QueryAssure/) · [Run the 30-second demo](#30-second-proof) · [Read the data strategy](docs/data-strategy.md)
 
 ![QueryAssure shows a grounded SQL Agent trace, query result, and release-blocking quality gates](public/og.png)
 
-QueryAssure is an open-source SQL Agent playground plus a contract-testing and CI quality-gate toolkit for agentic analytics. Ask questions in a polished chat interface, inspect the retrieved metadata, generated SQL, validation decisions, and results—then test the same agent for correctness, security, latency, and regressions.
+QueryAssure is an open-source SQL Agent playground plus a contract-testing and CI
+quality-gate toolkit for agentic analytics. Ask questions in a polished chat interface,
+inspect the metadata, SQL, validation decisions, and results—then test the same agent for
+correctness, security, latency, and regressions.
 
 If QueryAssure helps you catch a SQL Agent regression, consider [starring the repository](https://github.com/Victoria824/QueryAssure) and sharing the failing trace. That signal helps prioritize the next adapters and validators.
 
-> **v0.3.1:** QueryAssure brand, reference SQL Agent, HTTP/Python adapters, PostgreSQL and dbt metadata import,
-> correctness-first benchmarks, data-quality checks, reusable GitHub Action, GitHub Pages playground,
-> verified Python release artifacts, and versioned GHCR containers.
+> **v0.4.0:** one-command regression demo, self-contained HTML evidence reports,
+> adversarial mutation challenge, project scaffolding, enhanced GitHub Action artifacts,
+> and the complete zero-key SQL Agent playground.
+
+## 30-second proof
+
+No clone, Docker Engine, API key, or database setup is required:
+
+```bash
+uvx --from git+https://github.com/Victoria824/QueryAssure queryassure demo
+```
+
+QueryAssure generates deterministic retail data, runs five golden contracts, injects a
+plausible `customers.lifetime_value` hallucination, blocks it at the schema gate, and opens
+a self-contained HTML report you can share with your team.
+
+```text
+5 golden paths passed
+1 schema hallucination caught
+Verdict: BLOCKED FROM MERGE
+```
+
+Already have a report or an existing repository?
+
+```bash
+queryassure report reports/latest.json --output reports/latest.html
+queryassure init .
+queryassure challenge
+```
 
 ## Why this project exists
 
@@ -84,7 +114,7 @@ Requires Python 3.10+.
 Install the verified wheel from the latest GitHub Release:
 
 ```bash
-pip install https://github.com/Victoria824/QueryAssure/releases/download/v0.3.1/queryassure-0.3.1-py3-none-any.whl
+pip install https://github.com/Victoria824/QueryAssure/releases/download/v0.4.0/queryassure-0.4.0-py3-none-any.whl
 queryassure --version
 ```
 
@@ -101,6 +131,9 @@ queryassure validate-data
 
 # Run the included agent against the golden suite
 queryassure test --suite evals/retail.yml
+
+# Open the self-contained evidence report
+open reports/latest.html
 
 # Start the reference agent API
 queryassure serve
@@ -135,14 +168,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: Victoria824/QueryAssure@v0.3.1
+      - uses: Victoria824/QueryAssure@v0.4.0
         with:
           suite: evals/retail.yml
 ```
 
-The action writes a human-readable job summary, fails unsafe regressions, and uploads the
-complete JSON report as a workflow artifact. Omit `agent-url` to run the included reference
-agent and fixture as a zero-configuration smoke test.
+The action writes a human-readable job summary, fails unsafe regressions, and uploads both
+the machine-readable JSON result and a self-contained HTML evidence report. Omit `agent-url`
+to run the included reference agent and fixture as a zero-configuration smoke test.
+
+To scaffold the starter contracts and workflow into an existing repository:
+
+```bash
+queryassure init .
+```
 
 ## A test case is a contract
 
@@ -252,6 +291,9 @@ src/queryassure/generator.py    deterministic data generator
 src/queryassure/metadata.py     DuckDB, PostgreSQL, and dbt metadata adapters
 src/queryassure/validators.py   SQL/schema/policy validation
 src/queryassure/runner.py       contract runner and report comparison
+src/queryassure/reporting.py    self-contained HTML evidence reports
+src/queryassure/challenge.py    adversarial SQL mutation challenge
+src/queryassure/demo.py         one-command zero-key regression proof
 src/queryassure/benchmark.py    correctness-first public leaderboard
 src/queryassure/adapters.py     Python callable and HTTP agent adapters
 src/queryassure/datasets.py     dataset catalog and local generators
@@ -301,9 +343,10 @@ Security-sensitive reports should follow [SECURITY.md](SECURITY.md) instead of u
 
 - **Shipped:** reference agent, playground, synthetic data, policy gates, result equivalence
 - **Shipped:** HTTP/Python adapters, Docker Compose, GitHub Action, dbt/PostgreSQL metadata
-- **Shipped:** benchmark generator, PR summaries, JSON artifacts, public demo
+- **Shipped:** benchmark generator, PR summaries, JSON and HTML artifacts, public demo
 - **Shipped:** versioned Python artifacts, checksums, GitHub Pages, and GHCR containers
-- **Next:** schema-drift and metadata-injection mutation runner
+- **Shipped:** one-command regression proof, starter scaffolding, adversarial mutation runner
+- **Next:** metadata-injection and semantic-drift mutation adapters
 - **Next:** Snowflake/BigQuery execution adapters and community benchmark submissions
 
 The detailed scope, launch checklist, and first-week success measures are in

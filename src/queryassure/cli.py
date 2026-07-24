@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import webbrowser
 from pathlib import Path
 
 import typer
@@ -12,15 +13,19 @@ from . import __version__
 from .adapters import HttpAgentAdapter
 from .agent import OpenAIProvider, SqlAgent
 from .benchmark import build_leaderboard, save_leaderboard
+from .challenge import run_challenge
 from .data_quality import validate_retail_data
 from .datasets import dataset_catalog, install_dataset
+from .demo import run_demo
 from .generator import generate_retail_database
 from .metadata import Catalog
+from .reporting import render_html_report
 from .runner import EvaluationRunner, compare_reports
+from .scaffolding import create_starter_project
 
 app = typer.Typer(
     no_args_is_help=True,
-    help="Contract tests, SQL validation, and CI quality gates for reliable SQL agents.",
+    help="Pytest for SQL Agents: catch unsafe SQL and regressions before merge.",
 )
 dataset_app = typer.Typer(no_args_is_help=True, help="Discover and install evaluation datasets.")
 catalog_app = typer.Typer(no_args_is_help=True, help="Build grounding catalogs from data tools.")
@@ -52,6 +57,91 @@ def _build_agent(database: Path, catalog_path: Path, live: bool = False) -> SqlA
     catalog = Catalog.from_yaml(catalog_path)
     provider = OpenAIProvider() if live else None
     return SqlAgent(database, catalog, provider)
+
+
+def _print_report_table(report: dict, output: Path) -> None:
+    table = Table(title=report["suite"])
+    table.add_column("Case")
+    table.add_column("Result")
+    table.add_column("Latency", justify="right")
+    for result in report["results"]:
+        table.add_row(
+            result["case_id"],
+            "[green]PASS[/green]" if result["passed"] else "[red]FAIL[/red]",
+            f"{result['trace']['latency_ms']:.1f} ms",
+        )
+    console.print(table)
+    summary = report["summary"]
+    console.print(f"{summary['passed']}/{summary['total']} passed · JSON report: {output}")
+
+
+@app.command()
+def demo(
+    output: Path = typer.Option(
+        Path("queryassure-demo"),
+        help="Directory for the deterministic database and shareable reports",
+    ),
+    open_report: bool = typer.Option(
+        True,
+        "--open/--no-open",
+        help="Open the generated HTML report in the default browser",
+    ),
+) -> None:
+    """Run a zero-key demo that catches an injected SQL Agent regression."""
+    report, json_path, html_path = run_demo(output)
+    _print_report_table(report, json_path)
+    caught = report["demo"]["regressions_caught"]
+    expected = report["demo"]["expected_regressions"]
+    if caught == expected:
+        console.print(
+            "\n[bold green]✓ Regression caught as designed.[/bold green] "
+            "[bold red]BLOCKED FROM MERGE[/bold red]"
+        )
+        console.print(f"Shareable evidence: [link=file://{html_path.resolve()}]{html_path}[/link]")
+    else:  # pragma: no cover - defensive path
+        console.print("[red]The demo gate did not catch the expected regression.[/red]")
+        raise typer.Exit(1)
+    if open_report:
+        webbrowser.open(html_path.resolve().as_uri())
+
+
+@app.command()
+def challenge(
+    catalog: Path = typer.Option(Path("metadata/catalog.yml"), exists=True),
+    output: Path = typer.Option(Path("reports/challenge"), help="Challenge report directory"),
+) -> None:
+    """Mutation-test the gates with unsafe SQL and schema hallucinations."""
+    report, json_path, html_path = run_challenge(Catalog.from_yaml(catalog), output)
+    _print_report_table(report, json_path)
+    console.print(f"HTML report: {html_path}")
+    if report["summary"]["failed"]:
+        raise typer.Exit(1)
+
+
+@app.command("init")
+def init_project(
+    directory: Path = typer.Argument(Path("."), help="Repository to scaffold"),
+    force: bool = typer.Option(False, help="Overwrite existing QueryAssure starter files"),
+) -> None:
+    """Add starter contracts and a pull-request quality gate to a repository."""
+    try:
+        paths = create_starter_project(directory, force=force)
+    except FileExistsError as exc:
+        console.print(f"[red]{exc}[/red] Use --force to replace them.")
+        raise typer.Exit(2) from exc
+    console.print("[green]Created a runnable SQL Agent quality gate:[/green]")
+    for path in paths:
+        console.print(f"  • {path}")
+
+
+@app.command()
+def report(
+    source: Path = typer.Argument(..., exists=True, help="QueryAssure JSON report"),
+    output: Path = typer.Option(Path("reports/queryassure.html"), help="HTML report path"),
+) -> None:
+    """Turn a JSON evaluation report into self-contained, shareable HTML."""
+    target = render_html_report(json.loads(source.read_text()), output)
+    console.print(f"[green]Created[/green] {target}")
 
 
 @app.command()
@@ -96,6 +186,7 @@ def test_suite(
     database: Path = typer.Option(Path("data/retail.duckdb")),
     catalog: Path = typer.Option(Path("metadata/catalog.yml"), exists=True),
     output: Path = typer.Option(Path("reports/latest.json")),
+    html: Path = typer.Option(Path("reports/latest.html"), help="Shareable HTML report path"),
     live: bool = typer.Option(False, help="Use the configured OpenAI model instead of demo mode"),
 ) -> None:
     """Run deterministic and agent-level quality checks."""
@@ -105,21 +196,10 @@ def test_suite(
     runner = EvaluationRunner(agent, database, agent.catalog)
     report = runner.run_file(suite)
     runner.save_report(report, output)
-    table = Table(title=report["suite"])
-    table.add_column("Case")
-    table.add_column("Result")
-    table.add_column("Latency", justify="right")
-    for result in report["results"]:
-        table.add_row(
-            result["case_id"],
-            "[green]PASS[/green]" if result["passed"] else "[red]FAIL[/red]",
-            f"{result['trace']['latency_ms']:.1f} ms",
-        )
-    console.print(table)
+    render_html_report(report, html)
+    _print_report_table(report, output)
+    console.print(f"HTML report: {html}")
     summary = report["summary"]
-    console.print(
-        f"{summary['passed']}/{summary['total']} passed · report written to {output}"
-    )
     if summary["failed"]:
         raise typer.Exit(1)
 
@@ -131,13 +211,16 @@ def test_http(
     database: Path = typer.Option(Path("data/retail.duckdb"), exists=True),
     catalog: Path = typer.Option(Path("metadata/catalog.yml"), exists=True),
     output: Path = typer.Option(Path("reports/http-latest.json")),
+    html: Path = typer.Option(Path("reports/http-latest.html"), help="Shareable HTML report path"),
 ) -> None:
     """Run the same contract suite against any HTTP-accessible SQL agent."""
     metadata = Catalog.from_yaml(catalog)
     runner = EvaluationRunner(HttpAgentAdapter(url), database, metadata)
     report = runner.run_file(suite)
     runner.save_report(report, output)
+    render_html_report(report, html)
     console.print_json(data=report["summary"])
+    console.print(f"HTML report: {html}")
     if report["summary"]["failed"]:
         raise typer.Exit(1)
 
