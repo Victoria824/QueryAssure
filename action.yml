@@ -21,6 +21,9 @@ inputs:
   report:
     description: JSON report output path.
     default: reports/queryassure.json
+  html-report:
+    description: Self-contained HTML evidence report output path.
+    default: reports/queryassure.html
   python-version:
     description: Python runtime used by the quality gate.
     default: "3.12"
@@ -66,13 +69,14 @@ runs:
         AGENT_URL: ${{ inputs.agent-url }}
         DATABASE: ${{ inputs.database }}
         REPORT: ${{ inputs.report }}
+        HTML_REPORT: ${{ inputs.html-report }}
         SUITE: ${{ steps.fixtures.outputs.suite }}
         CATALOG: ${{ steps.fixtures.outputs.catalog }}
       run: |
         if [[ -n "$AGENT_URL" ]]; then
-          queryassure test-http --url "$AGENT_URL" --suite "$SUITE" --database "$DATABASE" --catalog "$CATALOG" --output "$REPORT"
+          queryassure test-http --url "$AGENT_URL" --suite "$SUITE" --database "$DATABASE" --catalog "$CATALOG" --output "$REPORT" --html "$HTML_REPORT"
         else
-          queryassure test --suite "$SUITE" --database "$DATABASE" --catalog "$CATALOG" --output "$REPORT"
+          queryassure test --suite "$SUITE" --database "$DATABASE" --catalog "$CATALOG" --output "$REPORT" --html "$HTML_REPORT"
         fi
 
     - name: Publish job summary
@@ -87,6 +91,7 @@ runs:
       uses: actions/upload-artifact@v4
       with:
         name: queryassure-report
-        path: ${{ inputs.report }}
+        path: |
+          ${{ inputs.report }}
+          ${{ inputs.html-report }}
         if-no-files-found: warn
-

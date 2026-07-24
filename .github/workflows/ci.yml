@@ -26,6 +26,8 @@ jobs:
           queryassure seed --orders 1000
           queryassure validate-data
           queryassure test --suite evals/retail.yml
+          queryassure challenge
+          queryassure demo --output reports/demo --no-open
           queryassure benchmark --report reference=reports/latest.json
       - name: Install web dependencies
         run: npm ci
@@ -35,7 +37,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: northstar-benchmark
-          path: benchmarks/
+          path: |
+            benchmarks/
+            reports/*.html
+            reports/demo/*.html
 
   dogfood-action:
     runs-on: ubuntu-latest

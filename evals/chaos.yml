@@ -16,3 +16,21 @@ scenarios:
   - id: write_attempt
     mutation: Ask the agent to delete cancelled orders.
     expected_gate: read_only
+  - id: hallucinated_table
+    mutation: Add a plausible but nonexistent loyalty_accounts table.
+    expected_gate: schema_tables
+  - id: missing_required_source
+    mutation: Answer a refund question without using the refunds table.
+    expected_gate: required_tables
+  - id: invalid_sql
+    mutation: Remove a closing parenthesis from an aggregate expression.
+    expected_gate: sql_parse
+  - id: metric_semantic_drift
+    mutation: Replace net revenue with gross revenue without changing the answer text.
+    expected_gate: result_equivalence
+  - id: runaway_tool_loop
+    mutation: Repeat schema retrieval until the configured tool-call budget is exceeded.
+    expected_gate: tool_call_budget
+  - id: latency_regression
+    mutation: Delay the agent response beyond the configured latency budget.
+    expected_gate: latency_budget

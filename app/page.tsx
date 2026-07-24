@@ -129,9 +129,11 @@ const CHECKS = [
   ["result_equivalence", "Matches golden result"],
 ];
 
-const ACTION_SNIPPET = `- uses: Victoria824/QueryAssure@v0.3.1
+const ACTION_SNIPPET = `- uses: Victoria824/QueryAssure@v0.4.0
   with:
     suite: evals/retail.yml`;
+const DEMO_COMMAND =
+  "uvx --from git+https://github.com/Victoria824/QueryAssure queryassure demo";
 
 function pickDemo(question: string) {
   const normalized = question.toLowerCase();
@@ -157,6 +159,7 @@ export default function Home() {
   const [runError, setRunError] = useState("");
   const [view, setView] = useState<"chat" | "evals">("chat");
   const [inspector, setInspector] = useState<"trace" | "sql" | "context">("trace");
+  const [copied, setCopied] = useState(false);
 
   const maxMetric = useMemo(() => {
     const numericColumn = active.data.columns.find((column) =>
@@ -226,16 +229,30 @@ export default function Home() {
 
       <section className="hero" id="top">
         <div>
-          <span className="eyebrow"><i /> Open-source SQL Agent testing</span>
-          <h1>Ask your data.<br /><span>Trust every query.</span></h1>
+          <span className="eyebrow"><i /> Open-source SQL Agent quality gate</span>
+          <h1>Test every query.<br /><span>Trust every agent.</span></h1>
           <p>
-            A complete SQL Agent playground paired with contract tests, policy validation,
-            and CI quality gates. The demo runs on deterministic synthetic retail data.
+            Pytest for SQL Agents. Catch hallucinated columns, unsafe SQL, semantic
+            regressions, and policy violations before they reach production.
           </p>
+          <div className="demo-command">
+            <div><span>$</span><code>{DEMO_COMMAND}</code></div>
+            <button
+              type="button"
+              onClick={async () => {
+                await navigator.clipboard.writeText(DEMO_COMMAND);
+                setCopied(true);
+                window.setTimeout(() => setCopied(false), 1400);
+              }}
+            >
+              {copied ? "Copied" : "Copy"}
+            </button>
+          </div>
+          <small className="demo-note">30-second demo · no clone · no Docker · no API key</small>
         </div>
         <div className="hero-meta">
-          <div><strong>9</strong><span>grounded tables</span></div>
-          <div><strong>5</strong><span>quality gates</span></div>
+          <div><strong>6</strong><span>adversarial mutations</span></div>
+          <div><strong>1</strong><span>command to prove it</span></div>
           <div><strong>0</strong><span>API keys required</span></div>
         </div>
       </section>
@@ -355,12 +372,12 @@ export default function Home() {
       ) : (
         <section className="eval-workspace">
           <div className="eval-header">
-            <div><span className="eyebrow"><i /> CI quality gate</span><h2>Northstar Retail golden path</h2></div>
+            <div><span className="eyebrow"><i /> CI regression proof</span><h2>Catch the failure before merge</h2></div>
             <button onClick={() => setView("chat")}>Open tested agent</button>
           </div>
           <div className="score-grid">
-            <article><span>Pass rate</span><strong>100%</strong><small>5 of 5 cases</small></article>
-            <article><span>Schema violations</span><strong>0</strong><small>−2 from baseline</small></article>
+            <article><span>Golden contracts</span><strong>5</strong><small>all expected paths passed</small></article>
+            <article><span>Regressions caught</span><strong>1</strong><small>hallucinated column blocked</small></article>
             <article><span>p95 latency</span><strong>0.81s</strong><small>budget 5.0s</small></article>
             <article><span>Policy violations</span><strong>0</strong><small>release blocking</small></article>
           </div>
@@ -375,14 +392,20 @@ export default function Home() {
             ].map(([name, latency]) => (
               <div className="suite-row" key={name}><strong>{name}</strong><span className="pass">PASS</span><span>5 / 5</span><time>{latency}</time></div>
             ))}
+            <div className="suite-row regression-row">
+              <strong>schema_hallucination_regression</strong>
+              <span className="fail">BLOCKED</span>
+              <span>schema_columns</span>
+              <time>43 ms</time>
+            </div>
           </div>
-          <div className="ci-callout"><code>queryassure test --suite evals/retail.yml</code><span>→</span><strong>Safe to merge</strong></div>
+          <div className="ci-callout blocked-callout"><code>customers.lifetime_value</code><span>→</span><strong>Blocked from merge</strong></div>
           <div className="adoption-grid">
             <article className="action-card">
               <span>GitHub Action</span>
               <h3>Make quality release-blocking.</h3>
               <pre><code>{ACTION_SNIPPET}</code></pre>
-              <p>Posts a PR summary and uploads the full JSON evaluation artifact.</p>
+              <p>Posts a PR summary and uploads JSON plus a self-contained HTML evidence report.</p>
             </article>
             <article className="benchmark-card">
               <span>Reproducible benchmark</span>
