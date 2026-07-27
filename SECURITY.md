@@ -8,8 +8,8 @@ results, or private model prompts in public issues.
 
 | Version | Supported |
 |---|---|
-| 0.4.x | Yes |
-| 0.3.x and earlier | No |
+| 0.5.x | Yes |
+| 0.4.x and earlier | No |
 
 ## Reporting a vulnerability
 
@@ -23,7 +23,8 @@ mitigation. Please allow a reasonable remediation window before public disclosur
 ## Scope
 
 Reports about write-query bypasses, sensitive-column policy bypasses, unsafe credential
-handling, dependency compromise, or unintentional data transmission are in scope. Model
+handling, Microsoft Graph permission or approval bypasses, dependency compromise, or
+unintentional data transmission are in scope. Model
 quality disagreements without a security or privacy impact belong in the public issue
 tracker.
 
@@ -34,6 +35,11 @@ tracker.
 - Query execution is bounded by time, row, memory, temporary-storage, and thread limits.
 - Evidence reports remove result rows and redact common credential-shaped fields.
 - Live model API access is off unless `QUERYASSURE_LIVE_ENABLED=true`.
+- Live Microsoft Graph access is off unless `QUERYASSURE_GRAPH_LIVE_ENABLED=true`.
+- Graph actions validate delegated scopes; email sends and Teams posts are approval-gated
+  in the reference workflow.
+- OAuth credentials are supplied directly to the transport and excluded from workflow
+  traces and evidence reports.
 - Set `QUERYASSURE_API_TOKEN` whenever the API is reachable by another user or host.
 - Docker Compose publishes only on loopback and runs both images as non-root.
 
