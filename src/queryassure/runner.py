@@ -88,9 +88,11 @@ class EvaluationRunner:
 
     @staticmethod
     def save_report(report: dict[str, Any], path: str | Path) -> Path:
+        from .reporting import redact_report
+
         target = Path(path)
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(json.dumps(report, indent=2, default=str))
+        target.write_text(json.dumps(redact_report(report), indent=2, default=str))
         return target
 
 
