@@ -34,9 +34,9 @@ def generate_retail_database(
     target.parent.mkdir(parents=True, exist_ok=True)
     if target.exists():
         target.unlink()
-    rng = random.Random(seed)
+    rng = random.Random(seed)  # nosec B311 - deterministic synthetic fixtures, not secrets
     connection = duckdb.connect(str(target))
-    connection.execute(
+    connection.execute(  # nosec B608 - seed is a typed integer CLI option
         """
         create table stores(
           store_id integer primary key, store_name varchar, region varchar,

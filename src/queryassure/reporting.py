@@ -1,12 +1,57 @@
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 from datetime import datetime, timezone
 from html import escape
 from pathlib import Path
 from typing import Any
 
 from . import __version__
+
+SECRET_KEYS = {
+    "access_token",
+    "api_key",
+    "apikey",
+    "authorization",
+    "database_url",
+    "dsn",
+    "password",
+    "passwd",
+    "private_key",
+    "refresh_token",
+    "secret",
+}
+
+
+def redact_report(report: dict[str, Any]) -> dict[str, Any]:
+    """Remove result rows and common credential fields before reports leave the process."""
+    sanitized = deepcopy(report)
+
+    def redact(value: Any) -> Any:
+        if isinstance(value, dict):
+            output: dict[str, Any] = {}
+            for raw_key, child in value.items():
+                key = str(raw_key)
+                normalized = key.lower()
+                if normalized == "rows" and isinstance(child, list):
+                    output["row_count"] = int(value.get("row_count", len(child)))
+                    output[key] = []
+                elif normalized in SECRET_KEYS:
+                    output[key] = "[REDACTED]"
+                else:
+                    output[key] = redact(child)
+            return output
+        if isinstance(value, list):
+            return [redact(item) for item in value]
+        return value
+
+    result = redact(sanitized)
+    result["privacy"] = {
+        "result_rows_redacted": True,
+        "credential_fields_redacted": True,
+    }
+    return result
 
 
 def _status_label(report: dict[str, Any]) -> tuple[str, str, str]:
@@ -25,7 +70,7 @@ def _render_check(check: dict[str, Any]) -> str:
     severity = escape(str(check.get("severity", "error")))
     state = "PASS" if passed else "FAIL"
     return f"""
-      <li class="check {'passed' if passed else 'failed'}">
+      <li class="check {"passed" if passed else "failed"}">
         <span class="check-state">{state}</span>
         <div>
           <strong>{escape(str(check.get("name", "unnamed_check")))}</strong>
@@ -52,14 +97,14 @@ def _render_case(result: dict[str, Any], index: int) -> str:
         else "<span>no retrieved context</span>"
     )
     return f"""
-    <article class="case {'passed' if passed else 'failed'}">
+    <article class="case {"passed" if passed else "failed"}">
       <header>
         <div class="case-number">{index:02d}</div>
         <div>
           <p class="case-id">{escape(str(result.get("case_id", "case")))}</p>
           <h2>{escape(str(result.get("question", "")))}</h2>
         </div>
-        <div class="case-status">{'PASS' if passed else 'FAIL'}</div>
+        <div class="case-status">{"PASS" if passed else "FAIL"}</div>
       </header>
       <div class="case-grid">
         <section>
@@ -75,13 +120,14 @@ def _render_case(result: dict[str, Any], index: int) -> str:
       <footer>
         <span>{float(trace.get("latency_ms", 0)):.1f} ms</span>
         <span>{len(tool_calls)} tool calls</span>
-        <span>{len(trace.get("rows", []) or [])} rows</span>
+        <span>{int(trace.get("row_count", len(trace.get("rows", []) or [])))} rows</span>
       </footer>
     </article>"""
 
 
 def render_html_report(report: dict[str, Any], output: str | Path) -> Path:
     """Render a self-contained, shareable report with no external dependencies."""
+    report = redact_report(report)
     target = Path(output)
     target.parent.mkdir(parents=True, exist_ok=True)
     headline, detail, state = _status_label(report)
@@ -187,7 +233,7 @@ def render_html_report(report: dict[str, Any], output: str | Path) -> Path:
       <div class="stat"><strong>{failed}</strong><span>regressions caught</span></div>
     </section>
     <div class="section-label"><span>01</span><h2>Contract evidence</h2></div>
-    {cases or '<p>No cases were included in this report.</p>'}
+    {cases or "<p>No cases were included in this report.</p>"}
     <details class="raw"><summary>Inspect raw JSON report</summary><pre>{raw_report}</pre></details>
     <footer class="report-footer">
       <span>Pytest for SQL Agents.</span>

@@ -129,7 +129,7 @@ const CHECKS = [
   ["result_equivalence", "Matches golden result"],
 ];
 
-const ACTION_SNIPPET = `- uses: Victoria824/QueryAssure@v0.4.0
+const ACTION_SNIPPET = `- uses: Victoria824/QueryAssure@v0.4.1
   with:
     suite: evals/retail.yml`;
 const DEMO_COMMAND =
