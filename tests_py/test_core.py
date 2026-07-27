@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+import duckdb
 import pytest
 from fastapi.testclient import TestClient
 from typer.testing import CliRunner
@@ -19,7 +20,7 @@ from queryassure.metadata import Catalog
 from queryassure.reporting import render_html_report
 from queryassure.runner import EvaluationRunner, compare_reports
 from queryassure.scaffolding import create_starter_project
-from queryassure.validators import SqlValidator
+from queryassure.validators import SqlValidator, execute_read_only
 
 
 @pytest.fixture(scope="session")
@@ -46,16 +47,58 @@ def test_validator_blocks_writes_and_sensitive_columns(retail_fixture):
     write_checks = validator.validate("delete from orders where status = 'cancelled'")
     assert not next(check for check in write_checks if check.name == "read_only").passed
     pii_checks = validator.validate("select customers.email from customers")
-    assert not next(
-        check for check in pii_checks if check.name == "sensitive_data_policy"
-    ).passed
+    assert not next(check for check in pii_checks if check.name == "sensitive_data_policy").passed
+
+
+@pytest.mark.parametrize(
+    "sql",
+    [
+        "select c.email from customers c",
+        "select email from customers",
+        'select "email" from "customers"',
+        "select * from customers",
+        "select c.* from customers c",
+        "select columns('email') from customers",
+        "select #2 from customers",
+    ],
+)
+def test_validator_blocks_sensitive_column_alias_and_star_bypasses(retail_fixture, sql):
+    _, catalog = retail_fixture
+    checks = SqlValidator(catalog).validate(sql)
+    assert not next(check for check in checks if check.name == "sensitive_data_policy").passed
+
+
+def test_validator_rejects_multiple_statements_and_external_access(retail_fixture):
+    _, catalog = retail_fixture
+    validator = SqlValidator(catalog)
+    multiple = validator.validate(
+        "select order_id from orders; copy (select 'unsafe') to '/tmp/queryassure.txt'"
+    )
+    assert not next(check for check in multiple if check.name == "sql_parse").passed
+
+    external = validator.validate("select * from read_text('/etc/hosts')")
+    assert not next(check for check in external if check.name == "external_access").passed
+
+
+def test_execution_sandbox_blocks_external_files_and_interrupts_expensive_queries(
+    retail_fixture,
+):
+    database, _ = retail_fixture
+    with pytest.raises(ValueError, match="exactly one read-only query"):
+        execute_read_only(database, "select 1; select 2")
+    with pytest.raises(duckdb.PermissionException):
+        execute_read_only(database, "select * from read_text('/etc/hosts')")
+    with pytest.raises(duckdb.InterruptException):
+        execute_read_only(
+            database,
+            "select sum(sin(i)) from range(1000000000) as values(i)",
+            timeout_seconds=0.01,
+        )
 
 
 def test_validator_detects_schema_hallucination(retail_fixture):
     _, catalog = retail_fixture
-    checks = SqlValidator(catalog).validate(
-        "select customer_id, lifetime_value from customers"
-    )
+    checks = SqlValidator(catalog).validate("select customer_id, lifetime_value from customers")
     assert not next(check for check in checks if check.name == "schema_columns").passed
 
 
@@ -149,9 +192,7 @@ def test_qualified_catalog_tables_are_validated():
     catalog = Catalog.from_column_rows(
         [("analytics.orders", "order_id", "bigint"), ("analytics.orders", "amount", "decimal")]
     )
-    checks = SqlValidator(catalog).validate(
-        "select o.order_id, o.amount from analytics.orders o"
-    )
+    checks = SqlValidator(catalog).validate("select o.order_id, o.amount from analytics.orders o")
     assert all(check.passed for check in checks if check.name.startswith("schema_"))
 
 
@@ -188,6 +229,8 @@ def test_benchmark_ranks_correctness_before_latency():
 
 def test_reference_api_health_schema_and_chat(monkeypatch, retail_fixture):
     database, _ = retail_fixture
+    monkeypatch.delenv("QUERYASSURE_API_TOKEN", raising=False)
+    monkeypatch.delenv("QUERYASSURE_LIVE_ENABLED", raising=False)
     monkeypatch.setenv("QUERYASSURE_DATABASE", str(database))
     monkeypatch.setenv("QUERYASSURE_CATALOG", "metadata/catalog.yml")
     with TestClient(api_app) as client:
@@ -202,8 +245,27 @@ def test_reference_api_health_schema_and_chat(monkeypatch, retail_fixture):
         assert response.json()["rows"]
 
 
+def test_reference_api_token_and_live_mode_are_fail_closed(monkeypatch, retail_fixture):
+    database, _ = retail_fixture
+    monkeypatch.setenv("QUERYASSURE_DATABASE", str(database))
+    monkeypatch.setenv("QUERYASSURE_CATALOG", "metadata/catalog.yml")
+    monkeypatch.setenv("QUERYASSURE_API_TOKEN", "test-only-token")
+    monkeypatch.delenv("QUERYASSURE_LIVE_ENABLED", raising=False)
+    with TestClient(api_app) as client:
+        assert client.get("/api/health").status_code == 200
+        assert client.get("/api/schema").status_code == 401
+        headers = {"authorization": "Bearer test-only-token"}
+        assert client.get("/api/schema", headers=headers).status_code == 200
+        response = client.post(
+            "/api/chat",
+            headers=headers,
+            json={"question": "Which region generated the most revenue?", "live": True},
+        )
+        assert response.status_code == 403
+
+
 def test_public_version_is_consistent_across_cli_and_api():
-    assert __version__ == "0.4.0"
+    assert __version__ == "0.4.1"
     result = CliRunner().invoke(cli_app, ["--version"])
     assert result.exit_code == 0
     assert result.stdout.strip() == __version__
@@ -247,6 +309,35 @@ def test_html_report_escapes_untrusted_agent_output(tmp_path):
     assert "<img src=x onerror=alert(1)>" not in html
 
 
+def test_saved_and_html_reports_redact_rows_and_credentials(tmp_path):
+    report = {
+        "suite": "privacy",
+        "summary": {"total": 1, "passed": 1, "failed": 0, "pass_rate": 1.0},
+        "results": [
+            {
+                "case_id": "private",
+                "question": "safe fixture",
+                "passed": True,
+                "checks": [],
+                "trace": {
+                    "sql": "select email from customers",
+                    "rows": [{"email": "private@example.test"}],
+                    "tool_calls": [{"headers": {"authorization": "Bearer private-token"}}],
+                },
+            }
+        ],
+    }
+    json_path = EvaluationRunner.save_report(report, tmp_path / "report.json")
+    html_path = render_html_report(report, tmp_path / "report.html")
+    for content in (json_path.read_text(), html_path.read_text()):
+        assert "private@example.test" not in content
+        assert "private-token" not in content
+        assert "[REDACTED]" in content
+    payload = json.loads(json_path.read_text())
+    assert payload["results"][0]["trace"]["row_count"] == 1
+    assert payload["results"][0]["trace"]["rows"] == []
+
+
 def test_init_scaffolds_runnable_contracts_without_overwriting(tmp_path):
     paths = create_starter_project(tmp_path)
     assert {path.relative_to(tmp_path).as_posix() for path in paths} == {
@@ -255,9 +346,10 @@ def test_init_scaffolds_runnable_contracts_without_overwriting(tmp_path):
         "queryassure/README.md",
         ".github/workflows/queryassure.yml",
     }
-    assert "Victoria824/QueryAssure@v0.4.0" in (
-        tmp_path / ".github/workflows/queryassure.yml"
-    ).read_text()
+    assert (
+        "Victoria824/QueryAssure@v0.4.1"
+        in (tmp_path / ".github/workflows/queryassure.yml").read_text()
+    )
     with pytest.raises(FileExistsError):
         create_starter_project(tmp_path)
 

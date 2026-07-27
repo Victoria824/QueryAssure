@@ -34,7 +34,7 @@ def generate_retail_database(
     target.parent.mkdir(parents=True, exist_ok=True)
     if target.exists():
         target.unlink()
-    rng = random.Random(seed)
+    rng = random.Random(seed)  # nosec B311
     connection = duckdb.connect(str(target))
     connection.execute(
         """
@@ -218,7 +218,7 @@ def generate_retail_database(
     # Generate the dense fact table inside DuckDB. A stable hash keeps the data reproducible
     # while avoiding tens of thousands of Python-to-database round trips.
     connection.execute(
-        f"""
+        """
         insert into inventory_snapshots
         select
           date '2026-01-05' + cast(week * 7 as integer) as snapshot_date,
@@ -226,15 +226,16 @@ def generate_retail_database(
           product_id,
           case
             when category = 'Frozen' and store_id in (2, 7, 12) and week > 15
-              then cast(hash({seed}, week, store_id, product_id) % 6 as integer)
-            else 8 + cast(hash({seed}, week, store_id, product_id) % 83 as integer)
+              then cast(hash(?, week, store_id, product_id) % 6 as integer)
+            else 8 + cast(hash(?, week, store_id, product_id) % 83 as integer)
           end as units_on_hand,
           8 as reorder_point,
           1 as tenant_id
         from range(0, 26) as w(week)
         cross join range(1, 13) as s(store_id)
         cross join products
-        """
+        """,
+        [seed, seed],
     )
 
     connection.execute(

@@ -22,9 +22,9 @@ correctness, security, latency, and regressions.
 
 If QueryAssure helps you catch a SQL Agent regression, consider [starring the repository](https://github.com/Victoria824/QueryAssure) and sharing the failing trace. That signal helps prioritize the next adapters and validators.
 
-> **v0.4.0:** one-command regression demo, self-contained HTML evidence reports,
-> adversarial mutation challenge, project scaffolding, enhanced GitHub Action artifacts,
-> and the complete zero-key SQL Agent playground.
+> **v0.4.1:** hardened single-statement SQL execution, external-access isolation,
+> alias-safe PII policies, redacted evidence reports, protected live APIs, non-root
+> containers, and immutable CI dependencies.
 
 ## 30-second proof
 
@@ -114,7 +114,7 @@ Requires Python 3.10+.
 Install the verified wheel from the latest GitHub Release:
 
 ```bash
-pip install https://github.com/Victoria824/QueryAssure/releases/download/v0.4.0/queryassure-0.4.0-py3-none-any.whl
+pip install https://github.com/Victoria824/QueryAssure/releases/download/v0.4.1/queryassure-0.4.1-py3-none-any.whl
 queryassure --version
 ```
 
@@ -168,7 +168,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: Victoria824/QueryAssure@v0.4.0
+      - uses: Victoria824/QueryAssure@v0.4.1
         with:
           suite: evals/retail.yml
 ```
@@ -321,21 +321,31 @@ Demo mode is intentionally deterministic and free. To exercise a live OpenAI mod
 ```bash
 pip install -e '.[openai]'
 export OPENAI_API_KEY=your-key-in-your-shell
-queryassure test --live
+export QUERYASSURE_LIVE_ENABLED=true
+export QUERYASSURE_API_TOKEN="$(openssl rand -hex 32)"
+queryassure serve
 ```
 
-Never commit model keys. `.env` files are ignored.
+Call the protected endpoint with `Authorization: Bearer $QUERYASSURE_API_TOKEN`.
+Live API access is fail-closed: both `QUERYASSURE_LIVE_ENABLED=true` and an API token
+are required. Never commit model keys or API tokens. `.env` files are ignored.
 
 ## Safety model
 
-- database connections are opened read-only
-- write operations are rejected before execution
-- restricted columns are enforced from versioned metadata
-- returned rows are capped
-- tests can block releases on policy regressions
-- no production data is required for the included demo
+- exactly one parsed query is accepted; writes and non-query statements are rejected
+- DuckDB runs read-only with external file/network access and extension loading disabled
+- execution has row, time, memory, temporary-storage, and thread limits
+- restricted columns are resolved through aliases and `SELECT *` before execution
+- JSON/HTML evidence reports remove result rows and redact common credential fields
+- live model API access is disabled by default and supports bearer-token protection
+- local containers run as non-root, drop Linux capabilities, and bind to loopback only
+- CI runs tests, static analysis, dependency audits, and immutable action revisions
+- no production data or model key is required for the included demo
 
-This is an engineering toolkit, not a complete authorization system. Production deployments must also enforce permissions in the warehouse itself.
+This is a defense-in-depth evaluation toolkit, not a complete authorization or
+multi-tenant isolation system. Run untrusted SQL in a separately isolated worker or
+container, expose the reference API only behind authentication and rate limiting, and
+enforce least-privilege permissions in the warehouse itself.
 
 Security-sensitive reports should follow [SECURITY.md](SECURITY.md) instead of using a public issue.
 

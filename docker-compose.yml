@@ -3,11 +3,18 @@ services:
     build: .
     command: queryassure serve --host 0.0.0.0
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     environment:
       QUERYASSURE_DATABASE: /app/data/retail.duckdb
     volumes:
       - retail-data:/app/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
       interval: 5s
@@ -18,10 +25,18 @@ services:
       context: .
       dockerfile: Dockerfile.web
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     depends_on:
       agent:
         condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/.wrangler
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
 
 volumes:
   retail-data:

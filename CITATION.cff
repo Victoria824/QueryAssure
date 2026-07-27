@@ -8,8 +8,8 @@ authors:
 repository-code: https://github.com/Victoria824/QueryAssure
 url: https://victoria824.github.io/QueryAssure/
 license: Apache-2.0
-version: 0.4.0
-date-released: 2026-07-24
+version: 0.4.1
+date-released: 2026-07-27
 keywords:
   - SQL Agent
   - text-to-SQL

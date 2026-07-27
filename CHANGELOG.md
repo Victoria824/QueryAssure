@@ -5,6 +5,29 @@ All notable changes to QueryAssure are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-07-27
+
+### Security
+
+- require exactly one parsed read-only query and reject external file, network,
+  extension, and secret-access SQL functions
+- isolate DuckDB execution with external access disabled plus time, row, memory,
+  temporary-storage, and thread limits
+- close sensitive-column policy bypasses through aliases, unqualified or quoted
+  identifiers, and wildcard projections
+- redact result rows and common credential fields from JSON and HTML evidence artifacts
+- keep live model access disabled by default, support bearer-token API protection, and
+  bound concurrent agent requests
+- run container images as non-root, bind Compose services to loopback, drop Linux
+  capabilities, and use read-only filesystems
+- pin GitHub Actions to immutable commits and add Bandit, pip-audit, and npm audit checks
+
+### Changed
+
+- document the production trust boundary and secure API configuration
+- add regression tests for multi-statement injection, external access, PII policy
+  aliases, execution interruption, authentication, and report redaction
+
 ## [0.4.0] - 2026-07-24
 
 ### Added
@@ -69,6 +92,7 @@ All notable changes to QueryAssure are documented here. The project follows
 
 - first public evaluation contracts, validators, benchmark tools, and Docker workflow
 
+[0.4.1]: https://github.com/Victoria824/QueryAssure/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/Victoria824/QueryAssure/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/Victoria824/QueryAssure/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/Victoria824/QueryAssure/compare/v0.2.0...v0.3.0
