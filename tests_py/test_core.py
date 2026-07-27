@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 import duckdb
+import httpx
 import pytest
 from fastapi.testclient import TestClient
 from typer.testing import CliRunner
@@ -17,10 +18,22 @@ from queryassure.datasets import dataset_catalog
 from queryassure.demo import run_demo
 from queryassure.generator import generate_retail_database
 from queryassure.metadata import Catalog
+from queryassure.microsoft365 import (
+    MAIL_READ,
+    MAIL_SEND,
+    MAIL_WRITE,
+    Approval,
+    HttpMicrosoftGraphClient,
+    Microsoft365Agent,
+    Microsoft365DemoHarness,
+    MockMicrosoftGraphClient,
+    OAuthGrant,
+)
 from queryassure.reporting import render_html_report
 from queryassure.runner import EvaluationRunner, compare_reports
 from queryassure.scaffolding import create_starter_project
 from queryassure.validators import SqlValidator, execute_read_only
+from queryassure.workflows import WorkflowEvaluationRunner
 
 
 @pytest.fixture(scope="session")
@@ -265,7 +278,7 @@ def test_reference_api_token_and_live_mode_are_fail_closed(monkeypatch, retail_f
 
 
 def test_public_version_is_consistent_across_cli_and_api():
-    assert __version__ == "0.4.1"
+    assert __version__ == "0.5.0"
     result = CliRunner().invoke(cli_app, ["--version"])
     assert result.exit_code == 0
     assert result.stdout.strip() == __version__
@@ -347,7 +360,7 @@ def test_init_scaffolds_runnable_contracts_without_overwriting(tmp_path):
         ".github/workflows/queryassure.yml",
     }
     assert (
-        "Victoria824/QueryAssure@v0.4.1"
+        "Victoria824/QueryAssure@v0.5.0"
         in (tmp_path / ".github/workflows/queryassure.yml").read_text()
     )
     with pytest.raises(FileExistsError):
@@ -365,3 +378,156 @@ def test_adversarial_challenge_detects_every_mutation(retail_fixture, tmp_path):
     }
     assert json_path.exists()
     assert "SAFE TO MERGE" in html_path.read_text()
+
+
+def test_microsoft365_contract_suite_passes_with_least_privilege(tmp_path):
+    runner = WorkflowEvaluationRunner(Microsoft365DemoHarness())
+    report = runner.run_file("evals/microsoft365.yml")
+    assert report["summary"] == {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "pass_rate": 1.0,
+    }
+    output = runner.save_report(report, tmp_path / "microsoft365.json")
+    content = output.read_text()
+    assert "graph.outlook.list_unread" in content
+    assert "human_approval_gate" in content
+    assert "Bearer " not in content
+
+
+def test_microsoft365_cli_uses_bundled_contracts_outside_the_repository(
+    tmp_path, monkeypatch
+):
+    monkeypatch.chdir(tmp_path)
+    result = CliRunner().invoke(
+        cli_app,
+        [
+            "m365-demo",
+            "--output",
+            str(tmp_path / "m365.json"),
+            "--html",
+            str(tmp_path / "m365.html"),
+        ],
+    )
+    assert result.exit_code == 0
+    assert "4/4 passed" in result.stdout
+    assert (tmp_path / "m365.json").exists()
+    assert (tmp_path / "m365.html").exists()
+
+
+def test_microsoft365_agent_withholds_email_without_approval():
+    client = MockMicrosoftGraphClient()
+    grant = OAuthGrant(
+        tenant_id="test-tenant",
+        subject="agent@example.test",
+        scopes=frozenset({MAIL_READ, MAIL_WRITE, MAIL_SEND}),
+    )
+    trace = Microsoft365Agent(client, grant).run(
+        "Draft and send a reply to the highest-priority incident."
+    )
+    assert trace.status == "awaiting_approval"
+    assert client.drafts
+    assert client.sent_drafts == []
+    assert any(event.kind == "approval" and event.approved is False for event in trace.events)
+
+
+def test_microsoft365_agent_sends_only_with_audited_approval():
+    client = MockMicrosoftGraphClient()
+    grant = OAuthGrant(
+        tenant_id="test-tenant",
+        subject="agent@example.test",
+        scopes=frozenset({MAIL_READ, MAIL_WRITE, MAIL_SEND}),
+    )
+    approval = Approval(
+        action="graph.outlook.send_draft",
+        approved=True,
+        approved_by="facilities.manager@example.test",
+        ticket="APR-0042",
+    )
+    trace = Microsoft365Agent(client, grant).run(
+        "Draft and send a reply to the highest-priority incident.",
+        context={
+            "approvals": [
+                {
+                    "action": approval.action,
+                    "approved": approval.approved,
+                    "approved_by": approval.approved_by,
+                    "ticket": approval.ticket,
+                }
+            ]
+        },
+    )
+    assert trace.status == "completed"
+    assert client.sent_drafts == ["draft-001"]
+    send_event = next(event for event in trace.events if event.name == approval.action)
+    assert send_event.approved is True
+    assert send_event.metadata["approval_ticket"] == "APR-0042"
+
+
+def test_microsoft365_agent_fails_closed_when_scope_is_missing():
+    client = MockMicrosoftGraphClient()
+    grant = OAuthGrant(
+        tenant_id="test-tenant",
+        subject="agent@example.test",
+        scopes=frozenset({MAIL_READ}),
+    )
+    trace = Microsoft365Agent(client, grant).run(
+        "Draft a reply to the highest-priority facilities incident."
+    )
+    assert trace.status == "blocked"
+    assert "Mail.ReadWrite" in (trace.error or "")
+    assert client.drafts == {}
+
+
+def test_microsoft365_agent_handles_an_empty_inbox_without_crashing():
+    client = MockMicrosoftGraphClient(messages=[])
+    grant = OAuthGrant(
+        tenant_id="test-tenant",
+        subject="agent@example.test",
+        scopes=frozenset({MAIL_READ, MAIL_WRITE}),
+    )
+    trace = Microsoft365Agent(client, grant).run(
+        "Draft a reply to the highest-priority facilities incident."
+    )
+    assert trace.status == "blocked"
+    assert trace.error == "No unread messages are available for a reply draft"
+    assert client.drafts == {}
+
+
+def test_live_graph_client_is_fail_closed_and_uses_delegated_bearer_auth():
+    grant = OAuthGrant(
+        tenant_id="test-tenant",
+        subject="agent@example.test",
+        scopes=frozenset({MAIL_READ}),
+    )
+    with pytest.raises(RuntimeError, match="disabled"):
+        HttpMicrosoftGraphClient(grant, lambda: "not-used", enabled=False)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.host == "graph.microsoft.com"
+        assert request.headers["Authorization"] == "Bearer test-access-token"
+        assert request.url.path == "/v1.0/me/messages"
+        return httpx.Response(200, json={"value": [{"id": "msg-live"}]})
+
+    client = HttpMicrosoftGraphClient(
+        grant,
+        lambda: "test-access-token",
+        enabled=True,
+        client=httpx.Client(
+            base_url="https://graph.microsoft.com/v1.0",
+            transport=httpx.MockTransport(handler),
+        ),
+    )
+    assert client.list_unread_messages() == [{"id": "msg-live"}]
+
+
+def test_workflow_html_report_renders_auditable_events(tmp_path):
+    report = WorkflowEvaluationRunner(Microsoft365DemoHarness()).run_file(
+        "evals/microsoft365.yml"
+    )
+    output = render_html_report(report, tmp_path / "microsoft365.html")
+    html = output.read_text()
+    assert "Workflow audit" in html
+    assert "graph.teams.post_message" in html
+    assert "Contract testing for production agents" in html

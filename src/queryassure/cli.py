@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import webbrowser
+from importlib import resources
 from pathlib import Path
 
 import typer
@@ -19,13 +20,15 @@ from .datasets import dataset_catalog, install_dataset
 from .demo import run_demo
 from .generator import generate_retail_database
 from .metadata import Catalog
+from .microsoft365 import Microsoft365DemoHarness
 from .reporting import render_html_report
 from .runner import EvaluationRunner, compare_reports
 from .scaffolding import create_starter_project
+from .workflows import WorkflowEvaluationRunner
 
 app = typer.Typer(
     no_args_is_help=True,
-    help="Pytest for SQL Agents: catch unsafe SQL and regressions before merge.",
+    help="Contract testing, security, and evaluation infrastructure for AI agents.",
 )
 dataset_app = typer.Typer(no_args_is_help=True, help="Discover and install evaluation datasets.")
 catalog_app = typer.Typer(no_args_is_help=True, help="Build grounding catalogs from data tools.")
@@ -50,7 +53,7 @@ def main(
         help="Show the installed QueryAssure version and exit.",
     ),
 ) -> None:
-    """Evaluate and release SQL Agents with confidence."""
+    """Evaluate and release AI agents with confidence."""
 
 
 def _build_agent(database: Path, catalog_path: Path, live: bool = False) -> SqlAgent:
@@ -114,6 +117,39 @@ def challenge(
     report, json_path, html_path = run_challenge(Catalog.from_yaml(catalog), output)
     _print_report_table(report, json_path)
     console.print(f"HTML report: {html_path}")
+    if report["summary"]["failed"]:
+        raise typer.Exit(1)
+
+
+@app.command("m365-demo")
+def microsoft365_demo(
+    suite: Path | None = typer.Option(
+        None,
+        exists=True,
+        help="Optional workflow contract suite; defaults to the bundled M365 contracts",
+    ),
+    output: Path = typer.Option(Path("reports/microsoft365.json")),
+    html: Path = typer.Option(
+        Path("reports/microsoft365.html"),
+        help="Shareable Microsoft 365 agent evidence report",
+    ),
+) -> None:
+    """Run zero-key Outlook/Teams contracts with OAuth and approval gates."""
+    runner = WorkflowEvaluationRunner(Microsoft365DemoHarness())
+    if suite is None:
+        bundled = resources.files("queryassure").joinpath("resources/microsoft365.yml")
+        with resources.as_file(bundled) as bundled_suite:
+            report = runner.run_file(bundled_suite)
+    else:
+        report = runner.run_file(suite)
+    runner.save_report(report, output)
+    render_html_report(report, html)
+    _print_report_table(report, output)
+    console.print(f"HTML report: {html}")
+    console.print(
+        "[green]Verified[/green] least-privilege Graph scopes, human approvals, "
+        "audit completeness, and credential hygiene."
+    )
     if report["summary"]["failed"]:
         raise typer.Exit(1)
 

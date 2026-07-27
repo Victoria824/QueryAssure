@@ -129,11 +129,13 @@ const CHECKS = [
   ["result_equivalence", "Matches golden result"],
 ];
 
-const ACTION_SNIPPET = `- uses: Victoria824/QueryAssure@v0.4.1
+const ACTION_SNIPPET = `- uses: Victoria824/QueryAssure@v0.5.0
   with:
     suite: evals/retail.yml`;
 const DEMO_COMMAND =
   "uvx --from git+https://github.com/Victoria824/QueryAssure queryassure demo";
+const M365_COMMAND =
+  "uvx --from git+https://github.com/Victoria824/QueryAssure queryassure m365-demo";
 
 function pickDemo(question: string) {
   const normalized = question.toLowerCase();
@@ -157,9 +159,10 @@ export default function Home() {
   const [active, setActive] = useState(DEMOS[0]);
   const [loading, setLoading] = useState(false);
   const [runError, setRunError] = useState("");
-  const [view, setView] = useState<"chat" | "evals">("chat");
+  const [view, setView] = useState<"chat" | "evals" | "m365">("chat");
   const [inspector, setInspector] = useState<"trace" | "sql" | "context">("trace");
   const [copied, setCopied] = useState(false);
+  const [m365Approved, setM365Approved] = useState(false);
 
   const maxMetric = useMemo(() => {
     const numericColumn = active.data.columns.find((column) =>
@@ -220,6 +223,9 @@ export default function Home() {
           <button className={view === "evals" ? "nav-active" : ""} onClick={() => setView("evals")}>
             Eval suite
           </button>
+          <button className={view === "m365" ? "nav-active" : ""} onClick={() => setView("m365")}>
+            M365 Agent
+          </button>
           <a href="#architecture">Architecture</a>
         </nav>
         <a className="github-button" href="https://github.com/Victoria824/QueryAssure" target="_blank" rel="noreferrer">
@@ -229,11 +235,12 @@ export default function Home() {
 
       <section className="hero" id="top">
         <div>
-          <span className="eyebrow"><i /> Open-source SQL Agent quality gate</span>
+          <span className="eyebrow"><i /> Open-source production Agent quality gate</span>
           <h1>Test every query.<br /><span>Trust every agent.</span></h1>
           <p>
-            Pytest for SQL Agents. Catch hallucinated columns, unsafe SQL, semantic
-            regressions, and policy violations before they reach production.
+            Pytest for SQL and enterprise Agents. Catch hallucinations, unsafe tool
+            calls, permission drift, missing approvals, and semantic regressions before
+            they reach production.
           </p>
           <div className="demo-command">
             <div><span>$</span><code>{DEMO_COMMAND}</code></div>
@@ -369,7 +376,7 @@ export default function Home() {
             )}
           </aside>
         </section>
-      ) : (
+      ) : view === "evals" ? (
         <section className="eval-workspace">
           <div className="eval-header">
             <div><span className="eyebrow"><i /> CI regression proof</span><h2>Catch the failure before merge</h2></div>
@@ -416,22 +423,88 @@ export default function Home() {
             </article>
           </div>
         </section>
+      ) : (
+        <section className="m365-workspace" aria-label="Microsoft 365 agent assurance demo">
+          <div className="m365-header">
+            <div>
+              <span className="eyebrow"><i /> Enterprise agent reference</span>
+              <h2>Outlook and Teams,<br />with an approval boundary.</h2>
+              <p>
+                A deterministic Microsoft Graph workflow demonstrates delegated OAuth
+                scopes, reversible drafts, human approval, and audit-ready evidence.
+              </p>
+            </div>
+            <div className="m365-command">
+              <span>$</span>
+              <code>{M365_COMMAND}</code>
+            </div>
+          </div>
+
+          <div className="m365-grid">
+            <article className="workflow-card">
+              <div className="card-kicker"><span>Live workflow trace</span><b>{m365Approved ? "COMPLETED" : "AWAITING APPROVAL"}</b></div>
+              {[
+                ["01", "graph.outlook.list_unread", "Mail.Read", "2 messages retrieved", "done"],
+                ["02", "mail.triage", "policy", "1 high-priority incident", "done"],
+                ["03", "graph.outlook.create_reply_draft", "Mail.ReadWrite", "draft-001 retained", "done"],
+                [
+                  "04",
+                  "graph.teams.post_message",
+                  "ChannelMessage.Send",
+                  m365Approved ? "approved · APR-2026-0042" : "human approval required",
+                  m365Approved ? "done" : "waiting",
+                ],
+              ].map(([step, name, scope, detail, status]) => (
+                <div className={`m365-step ${status}`} key={step}>
+                  <span>{step}</span>
+                  <div><strong>{name}</strong><small>{detail}</small></div>
+                  <code>{scope}</code>
+                </div>
+              ))}
+              <button
+                className={m365Approved ? "approval-complete" : ""}
+                onClick={() => setM365Approved((value) => !value)}
+              >
+                {m365Approved ? "✓ Approved by facilities.manager" : "Review and approve Teams post"}
+              </button>
+            </article>
+
+            <aside className="assurance-card">
+              <div className="card-kicker"><span>QueryAssure policy evidence</span><b>8 / 8 GATES</b></div>
+              {[
+                ["least_privilege_scopes", "Only Mail.Read, Mail.ReadWrite, and ChannelMessage.Send"],
+                ["human_approval_gate", "No outbound message before explicit approval"],
+                ["approval_evidence", m365Approved ? "Ticket APR-2026-0042 attached" : "Pending evidence; side effect withheld"],
+                ["audit_completeness", "Every decision and tool call has an ordered event"],
+                ["credential_hygiene", "OAuth tokens never enter traces or reports"],
+                ["forbidden_tools", "Mail.Send was not invoked"],
+              ].map(([name, detail]) => (
+                <div className="assurance-gate" key={name}>
+                  <span>✓</span><p><strong>{name}</strong><small>{detail}</small></p>
+                </div>
+              ))}
+              <div className="compliance-strip">
+                <span>SOC 2 evidence</span><span>ISO 27001 controls</span><span>fail closed</span>
+              </div>
+            </aside>
+          </div>
+        </section>
       )}
 
       <section className="architecture" id="architecture">
-        <div><span className="section-number">01</span><h2>One repo.<br />Two independent tools.</h2></div>
+        <div><span className="section-number">01</span><h2>One assurance layer.<br />Multiple production agents.</h2></div>
         <div className="architecture-flow">
-          <article><span>Experience layer</span><h3>SQL Agent</h3><p>Metadata retrieval, SQL generation, validation, read-only execution, and an inspectable chat UI.</p></article>
+          <article><span>Reference agents</span><h3>SQL + Microsoft 365</h3><p>Inspectable data workflows plus Outlook and Teams integration patterns with delegated permissions.</p></article>
           <b>+</b>
-          <article><span>Quality layer</span><h3>QueryAssure</h3><p>Contract tests, policy gates, result equivalence, benchmarks, and merge-blocking CI reports.</p></article>
+          <article><span>Quality layer</span><h3>Generic Agent Evals</h3><p>Tool contracts, OAuth scope policies, approval gates, regression tests, and audit evidence.</p></article>
           <b>=</b>
-          <article className="accent-card"><span>Production confidence</span><h3>Test the whole loop</h3><p>Connect Python or HTTP agents and ground them with DuckDB, PostgreSQL, or dbt metadata.</p></article>
+          <article className="accent-card"><span>Production confidence</span><h3>Secure by construction</h3><p>Connect department-owned agents while keeping integrations supportable, least-privileged, and reviewable.</p></article>
         </div>
       </section>
 
       <footer>
         <div className="brand"><span className="brand-mark">Q</span><span>QueryAssure</span></div>
-        <p>Built for engineers who refuse to ship a SQL Agent without tests.</p>
+        <p>Built for engineers who refuse to ship an Agent without tests.</p>
         <span>Apache-2.0 · 2026</span>
       </footer>
     </main>

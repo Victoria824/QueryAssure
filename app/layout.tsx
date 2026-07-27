@@ -13,24 +13,31 @@ export const metadata: Metadata = {
   alternates: {
     canonical: `${publicBase}/`,
   },
-  title: "QueryAssure — Pytest for SQL Agents",
+  title: "QueryAssure — Quality Gates for Production Agents",
   description:
-    "Catch hallucinated columns, unsafe SQL, semantic regressions, and policy violations before merge.",
+    "Test SQL and enterprise agents for unsafe actions, regressions, OAuth scope violations, and missing approvals before merge.",
   icons: {
     icon: `${publicBase}/favicon.svg`,
     shortcut: `${publicBase}/favicon.svg`,
   },
   openGraph: {
     title: "QueryAssure",
-    description: "Pytest for SQL Agents. Catch unsafe SQL and regressions before merge.",
+    description: "Quality gates for SQL and enterprise agents, including Microsoft 365.",
     type: "website",
-    images: [{ url: `${publicBase}/og.png`, width: 1672, height: 941, alt: "QueryAssure SQL Agent contract test report" }],
+    images: [
+      {
+        url: `${publicBase}/og-v0.5.jpg`,
+        width: 1672,
+        height: 941,
+        alt: "QueryAssure quality gates for SQL and Microsoft 365 agents",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "QueryAssure",
-    description: "Pytest for SQL Agents. Catch unsafe SQL and regressions before merge.",
-    images: [`${publicBase}/og.png`],
+    description: "Quality gates for SQL and enterprise agents, including Microsoft 365.",
+    images: [`${publicBase}/og-v0.5.jpg`],
   },
 };
 

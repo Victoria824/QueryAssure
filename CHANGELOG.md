@@ -5,6 +5,19 @@ All notable changes to QueryAssure are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-07-27
+
+### Added
+
+- framework-neutral workflow traces and evaluation contracts for tool-using agents
+- least-privilege OAuth scope, human approval, audit completeness, and credential
+  hygiene quality gates
+- deterministic Microsoft Graph simulator for Outlook email and Teams notifications
+- fail-closed live Microsoft Graph client with delegated permission checks
+- zero-key `queryassure m365-demo` and four Microsoft 365 workflow contracts
+- interactive Microsoft 365 Agent assurance scenario in the public playground
+- enterprise Agent security reference covering Graph permissions and trust boundaries
+
 ## [0.4.1] - 2026-07-27
 
 ### Security
@@ -93,6 +106,7 @@ All notable changes to QueryAssure are documented here. The project follows
 - first public evaluation contracts, validators, benchmark tools, and Docker workflow
 
 [0.4.1]: https://github.com/Victoria824/QueryAssure/compare/v0.4.0...v0.4.1
+[0.5.0]: https://github.com/Victoria824/QueryAssure/compare/v0.4.1...v0.5.0
 [0.4.0]: https://github.com/Victoria824/QueryAssure/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/Victoria824/QueryAssure/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/Victoria824/QueryAssure/compare/v0.2.0...v0.3.0
