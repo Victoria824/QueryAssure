@@ -33,6 +33,8 @@ jobs:
           queryassure seed --orders 1000
           queryassure validate-data
           queryassure test --suite evals/retail.yml
+          queryassure m365-demo --output reports/microsoft365.json \
+            --html reports/microsoft365.html
           queryassure challenge
           queryassure demo --output reports/demo --no-open
       - name: Validate playground
