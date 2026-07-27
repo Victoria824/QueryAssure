@@ -2,6 +2,13 @@
 
 from .agent import SqlAgent
 from .runner import EvaluationRunner
+from .workflows import WorkflowEvaluationRunner, WorkflowEvent, WorkflowTrace
 
-__all__ = ["EvaluationRunner", "SqlAgent"]
-__version__ = "0.4.1"
+__all__ = [
+    "EvaluationRunner",
+    "SqlAgent",
+    "WorkflowEvaluationRunner",
+    "WorkflowEvent",
+    "WorkflowTrace",
+]
+__version__ = "0.5.0"

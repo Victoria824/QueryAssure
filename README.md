@@ -1,9 +1,9 @@
 # QueryAssure
 
-**Pytest for SQL Agents.**
+**Quality gates for SQL and enterprise Agents.**
 
-Catch hallucinated columns, unsafe SQL, semantic regressions, and policy violations
-before they reach production.
+Catch hallucinated columns, unsafe SQL and tool calls, permission drift, missing
+approvals, semantic regressions, and policy violations before they reach production.
 
 [![CI](https://github.com/Victoria824/QueryAssure/actions/workflows/ci.yml/badge.svg)](https://github.com/Victoria824/QueryAssure/actions/workflows/ci.yml)
 [![Playground](https://github.com/Victoria824/QueryAssure/actions/workflows/pages.yml/badge.svg)](https://victoria824.github.io/QueryAssure/)
@@ -11,20 +11,20 @@ before they reach production.
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/Victoria824/QueryAssure?style=social)](https://github.com/Victoria824/QueryAssure/stargazers)
 
-[Try the zero-key playground](https://victoria824.github.io/QueryAssure/) · [Run the 30-second demo](#30-second-proof) · [Read the data strategy](docs/data-strategy.md)
+[Try the zero-key playground](https://victoria824.github.io/QueryAssure/) · [Run the 30-second demo](#30-second-proof) · [Read the enterprise security reference](docs/enterprise-agent-security.md)
 
-![QueryAssure shows a grounded SQL Agent trace, query result, and release-blocking quality gates](public/og.png)
+![QueryAssure quality gates for SQL and Microsoft 365 agents](public/og-v0.5.jpg)
 
-QueryAssure is an open-source SQL Agent playground plus a contract-testing and CI
-quality-gate toolkit for agentic analytics. Ask questions in a polished chat interface,
-inspect the metadata, SQL, validation decisions, and results—then test the same agent for
-correctness, security, latency, and regressions.
+QueryAssure is an open-source Agent playground plus a contract-testing, security, and CI
+quality-gate toolkit. The flagship SQL Agent catches data and query failures; the Microsoft
+365 reference agent demonstrates delegated OAuth scopes, Outlook and Teams integrations,
+human approvals, and audit-ready workflow evidence.
 
 If QueryAssure helps you catch a SQL Agent regression, consider [starring the repository](https://github.com/Victoria824/QueryAssure) and sharing the failing trace. That signal helps prioritize the next adapters and validators.
 
-> **v0.4.1:** hardened single-statement SQL execution, external-access isolation,
-> alias-safe PII policies, redacted evidence reports, protected live APIs, non-root
-> containers, and immutable CI dependencies.
+> **v0.5.0:** adds framework-neutral workflow contracts and a Microsoft Graph reference
+> agent for Outlook and Teams, including least-privilege OAuth scopes, approval-gated
+> side effects, complete audit traces, credential hygiene checks, and a zero-key demo.
 
 ## 30-second proof
 
@@ -43,6 +43,16 @@ a self-contained HTML report you can share with your team.
 1 schema hallucination caught
 Verdict: BLOCKED FROM MERGE
 ```
+
+Prove the enterprise-agent controls without a Microsoft tenant or API key:
+
+```bash
+uvx --from git+https://github.com/Victoria824/QueryAssure queryassure m365-demo
+```
+
+This runs four Outlook/Teams contracts covering mail triage, draft creation, blocked
+unapproved sends, approved Teams notifications, OAuth scope minimization, and audit
+completeness.
 
 Already have a report or an existing repository?
 
@@ -89,6 +99,17 @@ Question → metadata retrieval → SQL generation → policy validation
 - baseline/candidate regression comparison
 - JSON reports suitable for CI
 
+### Enterprise workflow assurance
+
+- framework-neutral `WorkflowTrace` and `WorkflowEvaluationRunner`
+- required and forbidden tool-call contracts
+- least-privilege OAuth scope checks
+- approval gates for irreversible or external side effects
+- ordered audit-event completeness
+- credential leakage detection and redacted evidence reports
+- deterministic Microsoft Graph simulator for zero-key CI
+- fail-closed live Graph client for Outlook and Teams
+
 ## Quickstart
 
 ### One command
@@ -114,7 +135,7 @@ Requires Python 3.10+.
 Install the verified wheel from the latest GitHub Release:
 
 ```bash
-pip install https://github.com/Victoria824/QueryAssure/releases/download/v0.4.1/queryassure-0.4.1-py3-none-any.whl
+pip install https://github.com/Victoria824/QueryAssure/releases/download/v0.5.0/queryassure-0.5.0-py3-none-any.whl
 queryassure --version
 ```
 
@@ -168,7 +189,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: Victoria824/QueryAssure@v0.4.1
+      - uses: Victoria824/QueryAssure@v0.5.0
         with:
           suite: evals/retail.yml
 ```
@@ -291,6 +312,8 @@ src/queryassure/generator.py    deterministic data generator
 src/queryassure/metadata.py     DuckDB, PostgreSQL, and dbt metadata adapters
 src/queryassure/validators.py   SQL/schema/policy validation
 src/queryassure/runner.py       contract runner and report comparison
+src/queryassure/workflows.py    framework-neutral tool/approval/scope contracts
+src/queryassure/microsoft365.py Outlook/Teams Graph integration and safe simulator
 src/queryassure/reporting.py    self-contained HTML evidence reports
 src/queryassure/challenge.py    adversarial SQL mutation challenge
 src/queryassure/demo.py         one-command zero-key regression proof
@@ -299,6 +322,7 @@ src/queryassure/adapters.py     Python callable and HTTP agent adapters
 src/queryassure/datasets.py     dataset catalog and local generators
 src/queryassure/data_quality.py synthetic-data contracts and fingerprint
 evals/                           golden and chaos suites
+evals/microsoft365.yml           OAuth, approval, and Graph workflow contracts
 metadata/                        schema, relationships, policies, metrics
 ```
 
@@ -338,6 +362,9 @@ are required. Never commit model keys or API tokens. `.env` files are ignored.
 - restricted columns are resolved through aliases and `SELECT *` before execution
 - JSON/HTML evidence reports remove result rows and redact common credential fields
 - live model API access is disabled by default and supports bearer-token protection
+- live Microsoft Graph access is disabled by default and uses delegated scopes
+- Outlook sends and Teams posts can be contractually blocked until human approval
+- workflow traces exclude access tokens and retain approval-ticket evidence
 - local containers run as non-root, drop Linux capabilities, and bind to loopback only
 - CI runs tests, static analysis, dependency audits, and immutable action revisions
 - no production data or model key is required for the included demo
@@ -356,6 +383,7 @@ Security-sensitive reports should follow [SECURITY.md](SECURITY.md) instead of u
 - **Shipped:** benchmark generator, PR summaries, JSON and HTML artifacts, public demo
 - **Shipped:** versioned Python artifacts, checksums, GitHub Pages, and GHCR containers
 - **Shipped:** one-command regression proof, starter scaffolding, adversarial mutation runner
+- **Shipped:** generic Agent workflow contracts and Microsoft 365 Outlook/Teams assurance demo
 - **Next:** metadata-injection and semantic-drift mutation adapters
 - **Next:** Snowflake/BigQuery execution adapters and community benchmark submissions
 
