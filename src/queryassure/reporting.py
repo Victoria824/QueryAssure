@@ -89,7 +89,14 @@ def _render_case(result: dict[str, Any], index: int) -> str:
         escape(str(item.get("name", item))) if isinstance(item, dict) else escape(str(item))
         for item in context
     ]
-    tool_calls = trace.get("tool_calls", []) or []
+    tool_calls = trace.get("tool_calls", trace.get("events", [])) or []
+    workflow_events = trace.get("events", []) or []
+    evidence_label = "Workflow audit" if workflow_events and not sql else "Generated SQL"
+    evidence = (
+        escape(json.dumps(workflow_events, indent=2, default=str))
+        if workflow_events and not sql
+        else sql or "-- no SQL generated"
+    )
     checks = "".join(_render_check(check) for check in result.get("checks", []))
     context_html = (
         "".join(f"<span>{label}</span>" for label in context_labels)
@@ -108,8 +115,8 @@ def _render_case(result: dict[str, Any], index: int) -> str:
       </header>
       <div class="case-grid">
         <section>
-          <h3>Generated SQL</h3>
-          <pre><code>{sql or "-- no SQL generated"}</code></pre>
+          <h3>{evidence_label}</h3>
+          <pre><code>{evidence}</code></pre>
           <div class="context">{context_html}</div>
         </section>
         <section>
@@ -221,7 +228,7 @@ def render_html_report(report: dict[str, Any], output: str | Path) -> Path:
     </div>
     <section class="verdict {state}">
       <div class="verdict-main">
-        <span class="eyebrow">SQL Agent quality gate</span>
+        <span class="eyebrow">Agent quality gate</span>
         <h1>{headline}</h1>
         <p>{detail} in “{title}”.</p>
       </div>
@@ -236,7 +243,7 @@ def render_html_report(report: dict[str, Any], output: str | Path) -> Path:
     {cases or "<p>No cases were included in this report.</p>"}
     <details class="raw"><summary>Inspect raw JSON report</summary><pre>{raw_report}</pre></details>
     <footer class="report-footer">
-      <span>Pytest for SQL Agents.</span>
+      <span>Contract testing for production agents.</span>
       <a href="https://github.com/Victoria824/QueryAssure">github.com/Victoria824/QueryAssure</a>
     </footer>
   </main>
