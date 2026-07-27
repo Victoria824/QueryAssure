@@ -22,10 +22,13 @@ test("server-renders the QueryAssure playground", async () => {
   const html = await response.text();
   assert.match(html, /<title>QueryAssure/);
   assert.match(html, /Test every query/);
+  assert.match(html, /production Agent quality gate/);
+  assert.match(html, /unsafe tool/);
   assert.match(html, /Northstar Retail Agent/);
   assert.match(html, /Eval suite/);
-  assert.match(html, /One repo/);
-  assert.match(html, /og\.png/);
+  assert.match(html, /M365 Agent/);
+  assert.match(html, /One assurance layer/);
+  assert.match(html, /og-v0\.5\.jpg/);
 });
 
 test("renders the zero-key query experience and quality gates", async () => {
@@ -36,8 +39,12 @@ test("renders the zero-key query experience and quality gates", async () => {
   assert.match(html, /result_equivalence/);
   assert.match(html, /deterministic demo/);
   const source = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
-  assert.match(source, /Victoria824\/QueryAssure@v0\.4\.1/);
+  assert.match(source, /Victoria824\/QueryAssure@v0\.5\.0/);
   assert.match(source, /queryassure demo/);
   assert.match(source, /Blocked from merge/i);
   assert.match(source, /Reproducible benchmark/);
+  assert.match(source, /graph\.outlook\.list_unread/);
+  assert.match(source, /graph\.teams\.post_message/);
+  assert.match(source, /human_approval_gate/);
+  assert.match(source, /queryassure m365-demo/);
 });
