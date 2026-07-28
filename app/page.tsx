@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 
 type Demo = {
   answer: string;
@@ -18,6 +18,8 @@ type AgentTrace = {
   retrieved_context?: Array<{ name?: string }>;
   error?: string | null;
 };
+
+type View = "chat" | "evals" | "m365";
 
 const API_BASE = process.env.NEXT_PUBLIC_QUERYASSURE_API?.replace(/\/$/, "");
 
@@ -159,10 +161,29 @@ export default function Home() {
   const [active, setActive] = useState(DEMOS[0]);
   const [loading, setLoading] = useState(false);
   const [runError, setRunError] = useState("");
-  const [view, setView] = useState<"chat" | "evals" | "m365">("chat");
+  const [view, setView] = useState<View>("chat");
   const [inspector, setInspector] = useState<"trace" | "sql" | "context">("trace");
   const [copied, setCopied] = useState(false);
   const [m365Approved, setM365Approved] = useState(false);
+
+  useEffect(() => {
+    const requestedView = new URLSearchParams(window.location.search).get("view");
+    if (requestedView === "chat" || requestedView === "evals" || requestedView === "m365") {
+      const frame = window.requestAnimationFrame(() => setView(requestedView));
+      return () => window.cancelAnimationFrame(frame);
+    }
+  }, []);
+
+  function selectView(nextView: View) {
+    setView(nextView);
+    const url = new URL(window.location.href);
+    if (nextView === "chat") {
+      url.searchParams.delete("view");
+    } else {
+      url.searchParams.set("view", nextView);
+    }
+    window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+  }
 
   const maxMetric = useMemo(() => {
     const numericColumn = active.data.columns.find((column) =>
@@ -214,16 +235,28 @@ export default function Home() {
         <a className="brand" href="#top" aria-label="QueryAssure home">
           <span className="brand-mark">Q</span>
           <span>QueryAssure</span>
-          <em>alpha</em>
+          <em>v0.5</em>
         </a>
         <nav aria-label="Primary navigation">
-          <button className={view === "chat" ? "nav-active" : ""} onClick={() => setView("chat")}>
+          <button
+            aria-pressed={view === "chat"}
+            className={view === "chat" ? "nav-active" : ""}
+            onClick={() => selectView("chat")}
+          >
             Playground
           </button>
-          <button className={view === "evals" ? "nav-active" : ""} onClick={() => setView("evals")}>
+          <button
+            aria-pressed={view === "evals"}
+            className={view === "evals" ? "nav-active" : ""}
+            onClick={() => selectView("evals")}
+          >
             Eval suite
           </button>
-          <button className={view === "m365" ? "nav-active" : ""} onClick={() => setView("m365")}>
+          <button
+            aria-pressed={view === "m365"}
+            className={view === "m365" ? "nav-active" : ""}
+            onClick={() => selectView("m365")}
+          >
             M365 Agent
           </button>
           <a href="#architecture">Architecture</a>
@@ -380,7 +413,7 @@ export default function Home() {
         <section className="eval-workspace">
           <div className="eval-header">
             <div><span className="eyebrow"><i /> CI regression proof</span><h2>Catch the failure before merge</h2></div>
-            <button onClick={() => setView("chat")}>Open tested agent</button>
+            <button onClick={() => selectView("chat")}>Open tested agent</button>
           </div>
           <div className="score-grid">
             <article><span>Golden contracts</span><strong>5</strong><small>all expected paths passed</small></article>

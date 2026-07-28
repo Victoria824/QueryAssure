@@ -27,6 +27,7 @@ test("server-renders the QueryAssure playground", async () => {
   assert.match(html, /Northstar Retail Agent/);
   assert.match(html, /Eval suite/);
   assert.match(html, /M365 Agent/);
+  assert.match(html, /v0\.5/);
   assert.match(html, /One assurance layer/);
   assert.match(html, /og-v0\.5\.jpg/);
 });
@@ -47,4 +48,6 @@ test("renders the zero-key query experience and quality gates", async () => {
   assert.match(source, /graph\.teams\.post_message/);
   assert.match(source, /human_approval_gate/);
   assert.match(source, /queryassure m365-demo/);
+  assert.match(source, /URLSearchParams/);
+  assert.match(source, /searchParams\.set\("view", nextView\)/);
 });
