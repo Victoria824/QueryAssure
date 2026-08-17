@@ -4,13 +4,21 @@ build-backend = "hatchling.build"
 
 [project]
 name = "queryassure"
-version = "0.5.0"
+version = "0.6.0"
 description = "Contract testing, security, and evaluation infrastructure for AI agents"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }
 authors = [{ name = "Victoria Liu" }]
-keywords = ["llm", "text-to-sql", "agent", "evaluation", "microsoft-graph", "sql"]
+keywords = [
+  "llm",
+  "text-to-sql",
+  "agent",
+  "evaluation",
+  "governance",
+  "policy-as-code",
+  "sql",
+]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "License :: OSI Approved :: Apache Software License",

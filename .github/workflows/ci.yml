@@ -37,6 +37,8 @@ jobs:
           queryassure test --suite evals/retail.yml
           queryassure m365-demo --output reports/microsoft365.json \
             --html reports/microsoft365.html
+          queryassure enterprise-demo --output reports/enterprise-evidence.json \
+            --html reports/enterprise-governance.html
           queryassure challenge
           queryassure demo --output reports/demo --no-open
           queryassure benchmark --report reference=reports/latest.json
@@ -44,8 +46,10 @@ jobs:
         run: |
           npm ci
           npm audit --audit-level=high
-      - name: Build playground
-        run: npm run build
+      - name: Type-check and test playground
+        run: |
+          npm run lint
+          npm test
       - name: Upload benchmark
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:

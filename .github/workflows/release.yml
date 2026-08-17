@@ -35,12 +35,15 @@ jobs:
           queryassure test --suite evals/retail.yml
           queryassure m365-demo --output reports/microsoft365.json \
             --html reports/microsoft365.html
+          queryassure enterprise-demo --output reports/enterprise-evidence.json \
+            --html reports/enterprise-governance.html
           queryassure challenge
           queryassure demo --output reports/demo --no-open
       - name: Validate playground
         run: |
           npm ci
           npm audit --audit-level=high
+          npm run lint
           npm test
 
   python-artifacts:

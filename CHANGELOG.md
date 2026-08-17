@@ -5,6 +5,24 @@ All notable changes to QueryAssure are documented here. The project follows
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-08-17
+
+### Added
+
+- deny-by-default enterprise policy engine with tenant isolation, RBAC action/resource
+  matching, deployment-environment controls, and ordered data-classification clearance
+- approval-ticket obligations for external side effects and governed break-glass access
+  with security notification, session expiry, and post-incident review requirements
+- versioned YAML enterprise policy pack and framework-neutral policy decisions with
+  request fingerprints, reasons, matched roles, obligations, and correlation-safe IDs
+- redacted HMAC-SHA256 evidence envelopes with canonical payload digests, constant-time
+  verification, age limits, malformed-input handling, atomic writes, and owner-only file
+  permissions
+- `queryassure enterprise-demo`, `queryassure policy evaluate`, and `queryassure evidence`
+  commands for zero-key demonstrations and production CI integration
+- enterprise governance operator guide and eleven regression tests for authorization,
+  tampering, stale evidence, CLI behaviour, and credential-safe artifacts
+
 ## [0.5.0] - 2026-07-27
 
 ### Added
@@ -106,6 +124,7 @@ All notable changes to QueryAssure are documented here. The project follows
 - first public evaluation contracts, validators, benchmark tools, and Docker workflow
 
 [0.4.1]: https://github.com/Victoria824/QueryAssure/compare/v0.4.0...v0.4.1
+[0.6.0]: https://github.com/Victoria824/QueryAssure/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Victoria824/QueryAssure/compare/v0.4.1...v0.5.0
 [0.4.0]: https://github.com/Victoria824/QueryAssure/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/Victoria824/QueryAssure/compare/v0.3.0...v0.3.1

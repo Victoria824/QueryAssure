@@ -51,7 +51,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - uses: Victoria824/QueryAssure@v0.5.0
+      - uses: Victoria824/QueryAssure@v0.6.0
         with:
           suite: queryassure/evals.yml
           catalog: queryassure/catalog.yml

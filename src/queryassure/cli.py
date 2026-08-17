@@ -18,7 +18,16 @@ from .challenge import run_challenge
 from .data_quality import validate_retail_data
 from .datasets import dataset_catalog, install_dataset
 from .demo import run_demo
+from .enterprise import run_enterprise_demo
+from .evidence import (
+    EvidenceVerificationError,
+    read_evidence_bundle,
+    sign_evidence,
+    verify_evidence,
+    write_evidence_bundle,
+)
 from .generator import generate_retail_database
+from .governance import EnterprisePolicy, PolicyEngine, PolicyRequest
 from .metadata import Catalog
 from .microsoft365 import Microsoft365DemoHarness
 from .reporting import render_html_report
@@ -32,8 +41,12 @@ app = typer.Typer(
 )
 dataset_app = typer.Typer(no_args_is_help=True, help="Discover and install evaluation datasets.")
 catalog_app = typer.Typer(no_args_is_help=True, help="Build grounding catalogs from data tools.")
+policy_app = typer.Typer(no_args_is_help=True, help="Evaluate enterprise agent policy packs.")
+evidence_app = typer.Typer(no_args_is_help=True, help="Sign and verify audit evidence bundles.")
 app.add_typer(dataset_app, name="dataset")
 app.add_typer(catalog_app, name="catalog")
+app.add_typer(policy_app, name="policy")
+app.add_typer(evidence_app, name="evidence")
 console = Console()
 
 
@@ -152,6 +165,125 @@ def microsoft365_demo(
     )
     if report["summary"]["failed"]:
         raise typer.Exit(1)
+
+
+@app.command("enterprise-demo")
+def enterprise_demo(
+    output: Path = typer.Option(
+        Path("reports/enterprise-evidence.json"),
+        help="Tamper-evident governance evidence bundle",
+    ),
+    html: Path = typer.Option(
+        Path("reports/enterprise-governance.html"),
+        help="Shareable enterprise control report",
+    ),
+) -> None:
+    """Run tenant, RBAC, approval, and break-glass controls with signed evidence."""
+    report, evidence_path, verified = run_enterprise_demo(output)
+    render_html_report(report, html)
+    _print_report_table(report, evidence_path)
+    console.print(f"HTML report: {html}")
+    console.print(
+        "[green]Verified[/green] tenant isolation, resource authorization, data "
+        "classification, approval obligations, break-glass controls, and evidence integrity."
+    )
+    if report["summary"]["failed"] or not verified:
+        raise typer.Exit(1)
+
+
+def _policy_from_path(path: Path | None) -> EnterprisePolicy:
+    if path is not None:
+        return EnterprisePolicy.from_yaml(path)
+    bundled = resources.files("queryassure").joinpath("resources/enterprise-policy.yml")
+    with resources.as_file(bundled) as bundled_policy:
+        return EnterprisePolicy.from_yaml(bundled_policy)
+
+
+@policy_app.command("evaluate")
+def evaluate_policy(
+    tenant: str = typer.Option(..., help="Authenticated tenant identifier"),
+    subject: str = typer.Option(..., help="Authenticated actor"),
+    role: list[str] = typer.Option(..., "--role", help="Repeatable principal role"),
+    action: str = typer.Option(..., help="Agent action, for example sql.read"),
+    resource: str = typer.Option(..., help="Governed resource identifier"),
+    resource_tenant: str | None = typer.Option(None, help="Resource owner tenant"),
+    classification: str = typer.Option("internal", help="Data classification"),
+    environment: str = typer.Option("production", help="Deployment environment"),
+    approval_ticket: str | None = typer.Option(None, help="Non-secret approval reference"),
+    break_glass: bool = typer.Option(False, help="Request emergency access"),
+    justification: str | None = typer.Option(None, help="Break-glass justification"),
+    policy: Path | None = typer.Option(None, exists=True, help="Policy pack YAML"),
+) -> None:
+    """Evaluate one action with deny-by-default enterprise policy-as-code."""
+    request = PolicyRequest(
+        tenant_id=tenant,
+        resource_tenant_id=resource_tenant,
+        subject=subject,
+        roles=frozenset(role),
+        action=action,
+        resource=resource,
+        environment=environment,
+        classification=classification,
+        approval_ticket=approval_ticket,
+        break_glass=break_glass,
+        justification=justification,
+    )
+    decision = PolicyEngine(_policy_from_path(policy)).evaluate(request)
+    console.print_json(data=decision.to_dict())
+    if not decision.allowed:
+        raise typer.Exit(1)
+
+
+def _evidence_key(key_env: str) -> bytes:
+    raw = os.environ.get(key_env, "")
+    if len(raw.encode()) < 32:
+        console.print(
+            f"[red]{key_env} must contain an operator-managed key of at least 32 bytes[/red]"
+        )
+        raise typer.Exit(2)
+    return raw.encode()
+
+
+@evidence_app.command("sign")
+def sign_report(
+    report: Path = typer.Argument(..., exists=True, help="QueryAssure JSON report"),
+    output: Path = typer.Option(Path("reports/evidence.json")),
+    key_id: str = typer.Option(..., help="KMS or secret-manager key identifier"),
+    key_env: str = typer.Option(
+        "QUERYASSURE_EVIDENCE_KEY",
+        help="Environment variable containing the signing key",
+    ),
+) -> None:
+    """Redact and sign a report without exposing signing material in arguments."""
+    envelope = sign_evidence(
+        json.loads(report.read_text()),
+        _evidence_key(key_env),
+        key_id=key_id,
+    )
+    target = write_evidence_bundle(envelope, output)
+    console.print(f"[green]Signed[/green] {target} with key id {key_id}")
+
+
+@evidence_app.command("verify")
+def verify_report(
+    evidence: Path = typer.Argument(..., exists=True, help="Signed evidence bundle"),
+    key_env: str = typer.Option(
+        "QUERYASSURE_EVIDENCE_KEY",
+        help="Environment variable containing the verification key",
+    ),
+    max_age_seconds: float | None = typer.Option(None, min=1),
+) -> None:
+    """Fail when an evidence bundle is stale, malformed, or tampered with."""
+    try:
+        verify_evidence(
+            read_evidence_bundle(evidence),
+            _evidence_key(key_env),
+            max_age_seconds=max_age_seconds,
+        )
+    except EvidenceVerificationError as exc:
+        console.print(f"[red]Evidence verification failed:[/red] {exc}")
+        raise typer.Exit(1) from exc
+    console.print(f"[bold green]VERIFIED[/bold green] {evidence}")
 
 
 @app.command("init")

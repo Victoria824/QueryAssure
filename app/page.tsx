@@ -129,7 +129,7 @@ const CHECKS = [
   ["result_equivalence", "Matches golden result"],
 ];
 
-const ACTION_SNIPPET = `- uses: Victoria824/QueryAssure@v0.5.0
+const ACTION_SNIPPET = `- uses: Victoria824/QueryAssure@v0.6.0
   with:
     suite: evals/retail.yml`;
 const DEMO_COMMAND =
@@ -214,7 +214,7 @@ export default function Home() {
         <a className="brand" href="#top" aria-label="QueryAssure home">
           <span className="brand-mark">Q</span>
           <span>QueryAssure</span>
-          <em>alpha</em>
+          <em>v0.6</em>
         </a>
         <nav aria-label="Primary navigation">
           <button className={view === "chat" ? "nav-active" : ""} onClick={() => setView("chat")}>

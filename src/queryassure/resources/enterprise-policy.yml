@@ -1,0 +1,50 @@
+version: "2026-08-17.1"
+default_effect: deny
+
+environments:
+  - development
+  - staging
+  - production
+
+classifications:
+  - public
+  - internal
+  - confidential
+  - restricted
+
+roles:
+  analyst:
+    actions:
+      - sql.read
+      - catalog.read
+    resources:
+      - "warehouse:*"
+    clearance: confidential
+
+  operator:
+    actions:
+      - sql.read
+      - agent.notification.*
+      - agent.workflow.execute
+    resources:
+      - "warehouse:*"
+      - "m365:*"
+    clearance: confidential
+
+  security-admin:
+    actions:
+      - "*"
+    resources:
+      - "*"
+    clearance: restricted
+
+approval:
+  required_for:
+    - agent.notification.send
+    - agent.workflow.execute
+  ticket_pattern: "^APR-[0-9]{4,}$"
+
+break_glass:
+  roles:
+    - security-admin
+  ticket_pattern: "^INC-[0-9]{4,}$"

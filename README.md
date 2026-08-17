@@ -22,9 +22,9 @@ human approvals, and audit-ready workflow evidence.
 
 If QueryAssure helps you catch a SQL Agent regression, consider [starring the repository](https://github.com/Victoria824/QueryAssure) and sharing the failing trace. That signal helps prioritize the next adapters and validators.
 
-> **v0.5.0:** adds framework-neutral workflow contracts and a Microsoft Graph reference
-> agent for Outlook and Teams, including least-privilege OAuth scopes, approval-gated
-> side effects, complete audit traces, credential hygiene checks, and a zero-key demo.
+> **v0.6.0:** adds deny-by-default enterprise policy-as-code, multi-tenant isolation,
+> RBAC/resource authorization, classification clearance, approval and break-glass
+> obligations, plus tamper-evident redacted audit bundles.
 
 ## 30-second proof
 
@@ -53,6 +53,16 @@ uvx --from git+https://github.com/Victoria824/QueryAssure queryassure m365-demo
 This runs four Outlook/Teams contracts covering mail triage, draft creation, blocked
 unapproved sends, approved Teams notifications, OAuth scope minimization, and audit
 completeness.
+
+Exercise the enterprise governance layer without an identity provider or KMS:
+
+```bash
+uvx --from git+https://github.com/Victoria824/QueryAssure queryassure enterprise-demo
+```
+
+This runs six policy decisions covering same-tenant access, cross-tenant denial,
+classification clearance, approval-gated side effects, and audited break-glass access.
+It produces a redacted, tamper-evident evidence bundle and a shareable HTML report.
 
 Already have a report or an existing repository?
 
@@ -110,6 +120,17 @@ Question → metadata retrieval → SQL generation → policy validation
 - deterministic Microsoft Graph simulator for zero-key CI
 - fail-closed live Graph client for Outlook and Teams
 
+### Enterprise governance and evidence
+
+- deny-by-default YAML policy packs with explicit versioning
+- tenant-bound resource access and recognized-role enforcement
+- wildcard RBAC actions constrained by resource patterns
+- ordered public, internal, confidential, and restricted clearances
+- approval-ticket obligations for external or irreversible actions
+- break-glass roles with incident tickets, justification, expiry, and review obligations
+- HMAC-SHA256 evidence envelopes over redacted canonical reports
+- atomic owner-only evidence writes plus digest, signature, and age verification
+
 ## Quickstart
 
 ### One command
@@ -135,7 +156,7 @@ Requires Python 3.10+.
 Install the verified wheel from the latest GitHub Release:
 
 ```bash
-pip install https://github.com/Victoria824/QueryAssure/releases/download/v0.5.0/queryassure-0.5.0-py3-none-any.whl
+pip install https://github.com/Victoria824/QueryAssure/releases/download/v0.6.0/queryassure-0.6.0-py3-none-any.whl
 queryassure --version
 ```
 
@@ -189,7 +210,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: Victoria824/QueryAssure@v0.5.0
+      - uses: Victoria824/QueryAssure@v0.6.0
         with:
           suite: evals/retail.yml
 ```

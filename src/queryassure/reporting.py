@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from copy import deepcopy
 from datetime import datetime, timezone
 from html import escape
@@ -22,6 +23,19 @@ SECRET_KEYS = {
     "refresh_token",
     "secret",
 }
+SECRET_VALUE_PATTERNS = (
+    re.compile(r"(?i)\bbearer\s+[A-Za-z0-9._~+/=-]{8,}"),
+    re.compile(r"(?i)\b(?:sk|gh[opsu]|xox[baprs])-[A-Za-z0-9_-]{8,}"),
+    re.compile(r"(?i)\b(?:postgres(?:ql)?|mysql)://[^\s/@:]+:[^\s/@]+@"),
+    re.compile(r"(?i)\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b"),
+)
+
+
+def _redact_secret_values(value: str) -> str:
+    redacted = value
+    for pattern in SECRET_VALUE_PATTERNS:
+        redacted = pattern.sub("[REDACTED]", redacted)
+    return redacted
 
 
 def redact_report(report: dict[str, Any]) -> dict[str, Any]:
@@ -44,12 +58,16 @@ def redact_report(report: dict[str, Any]) -> dict[str, Any]:
             return output
         if isinstance(value, list):
             return [redact(item) for item in value]
+        if isinstance(value, str):
+            return _redact_secret_values(value)
         return value
 
     result = redact(sanitized)
     result["privacy"] = {
         "result_rows_redacted": True,
         "credential_fields_redacted": True,
+        "credential_values_redacted": True,
+        "email_values_redacted": True,
     }
     return result
 
