@@ -278,7 +278,7 @@ def test_reference_api_token_and_live_mode_are_fail_closed(monkeypatch, retail_f
 
 
 def test_public_version_is_consistent_across_cli_and_api():
-    assert __version__ == "0.5.0"
+    assert __version__ == "0.6.0"
     result = CliRunner().invoke(cli_app, ["--version"])
     assert result.exit_code == 0
     assert result.stdout.strip() == __version__
@@ -360,7 +360,7 @@ def test_init_scaffolds_runnable_contracts_without_overwriting(tmp_path):
         ".github/workflows/queryassure.yml",
     }
     assert (
-        "Victoria824/QueryAssure@v0.5.0"
+        "Victoria824/QueryAssure@v0.6.0"
         in (tmp_path / ".github/workflows/queryassure.yml").read_text()
     )
     with pytest.raises(FileExistsError):
