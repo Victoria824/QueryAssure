@@ -209,6 +209,37 @@ def test_qualified_catalog_tables_are_validated():
     assert all(check.passed for check in checks if check.name.startswith("schema_"))
 
 
+def test_bigquery_dialect_keeps_schema_and_sensitive_data_gates():
+    catalog = Catalog.from_column_rows(
+        [
+            ("analytics.orders", "ordered_at", "timestamp"),
+            ("analytics.orders", "region", "string"),
+            ("analytics.orders", "order_id", "int64"),
+            ("analytics.orders", "net_revenue", "numeric"),
+            ("analytics.customers", "customer_id", "int64"),
+            ("analytics.customers", "email", "string"),
+        ]
+    )
+    catalog.policies = {"forbidden_columns": ["analytics.customers.email"]}
+    validator = SqlValidator(catalog, dialect="bigquery")
+    safe_query = """
+        select region,
+               safe_divide(sum(net_revenue), count(distinct order_id)) as avg_revenue
+        from analytics.orders
+        where date(ordered_at) >= date '2026-01-01'
+        group by region
+    """
+    safe_checks = validator.validate(
+        safe_query, {"required_tables": ["analytics.orders"]}
+    )
+    assert all(check.passed for check in safe_checks)
+
+    pii_checks = validator.validate("select * from analytics.customers")
+    assert not next(
+        check for check in pii_checks if check.name == "sensitive_data_policy"
+    ).passed
+
+
 def test_benchmark_ranks_correctness_before_latency():
     safe = {
         "suite": "sample",

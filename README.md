@@ -269,6 +269,13 @@ queryassure catalog import-postgres \
 Credentials are used only for live introspection and are never written to the generated
 catalog. Schema-qualified tables are supported by the SQL validator.
 
+BigQuery SQL can be validated through the same dialect-aware policy boundary, including qualified
+tables, `SAFE_DIVIDE`, schema grounding, and restricted-column checks. The current repository uses
+deterministic DuckDB execution and does not claim a live BigQuery deployment; see the
+[BigQuery assurance mapping](docs/bigquery-assurance.md) for the dry-run production adapter design.
+
+For interviews, follow the [five-minute evidence walkthrough](docs/interview-demo.md).
+
 ## Build a reproducible benchmark
 
 Rank agents from their versioned JSON reports. Correctness and safety are deliberately
