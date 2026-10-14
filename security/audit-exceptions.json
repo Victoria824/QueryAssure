@@ -1,0 +1,12 @@
+{
+  "owner": "repository-maintainers",
+  "exceptions": [
+    {
+      "source": 1240992,
+      "advisory": "GHSA-vfj7-8cjw-p6xm",
+      "expires": "2026-10-28",
+      "scope": "development-only vinext build chain",
+      "rationale": "No non-breaking upstream resolution is available; untrusted glob input is not accepted by the build pipeline. Re-evaluate or replace vinext before expiry."
+    }
+  ]
+}

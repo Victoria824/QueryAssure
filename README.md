@@ -395,6 +395,8 @@ are required. Never commit model keys or API tokens. `.env` files are ignored.
 - workflow traces exclude access tokens and retain approval-ticket evidence
 - local containers run as non-root, drop Linux capabilities, and bind to loopback only
 - CI runs tests, static analysis, dependency audits, and immutable action revisions
+- high/critical dependency findings fail CI unless a named, scoped exception in
+  `security/audit-exceptions.json` has a future expiry date; new advisories remain fail-closed
 - no production data or model key is required for the included demo
 
 This is a defense-in-depth evaluation toolkit, not a complete authorization or

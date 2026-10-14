@@ -45,7 +45,7 @@ jobs:
       - name: Install web dependencies
         run: |
           npm ci
-          npm audit --audit-level=high
+          npm run audit:ci
       - name: Type-check and test playground
         run: |
           npm run lint
